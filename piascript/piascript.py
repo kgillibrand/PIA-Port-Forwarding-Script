@@ -37,6 +37,7 @@ import urllib.parse
 import socket
 import fcntl
 import struct
+import time
 
 PIA_URL = "https://www.privateinternetaccess.com/vpninfo/port_forward_assignment"
 """API endpoint URL"""
@@ -49,6 +50,9 @@ INTERFACE = "tun0"
 
 TRANSMISSION_PROCESS_NAME = "transmission-gt"
 """Process name for Transmission"""
+
+KILL_SLEEP_DURATION = 10
+"""Duration to sleep in seconds after killing Transmission to allow it to close (Transmission will send data to trackers before closing if torrents are active)"""
     
 def isConnected ():
     """Checks if the client is connected to a PIA VPN, returns a boolean."""
@@ -113,6 +117,10 @@ def updateTransmissionConfig (configPath, port):
     """
     
     os.system ("pkill %s" %TRANSMISSION_PROCESS_NAME)
+    
+    print ("Sleeping for 10 seconds to allow Transmission to close")
+    time.sleep (KILL_SLEEP_DURATION)
+    
     print ("Transmission killed, you will need to restart it afer this script completes")
 
     settings = None
@@ -145,7 +153,7 @@ def addUFWPort (port):
     
     #Add rule, check exit status and exception for sudo errors
     try:
-        if os.system ("sudo ufw allow %s" %port) == 0:
+        if os.system ("sudo ufw allow %s" %port) != 0:
             print ("Error writing firewall rules (Was your root password correct?)")
             sys.exit ()
             
