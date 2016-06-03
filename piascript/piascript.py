@@ -33,10 +33,10 @@ import os
 import sys
 import json
 import urllib.request
+import urllib.parse
 import socket
 import fcntl
 import struct
-from collections import OrderedDict
 
 PIA_URL = "https://www.privateinternetaccess.com/vpninfo/port_forward_assignment"
 """API endpoint URL"""
@@ -46,15 +46,19 @@ TRANSMISSION_CONFIG_PATH = "/home/kieran/.config/transmission/settings.json"
 
 INTERFACE = "tun0"
 """Network interface for VPN"""
+
+TRANSMISSION_PROCESS_NAME = "transmission-gt"
+"""Process name for Transmission"""
     
 def isConnected ():
     """Checks if the client is connected to a PIA VPN, returns a boolean."""
 
+    #Checks exit status of ifconfig INTERFACE (0 for success, non 0 for error)
     return (os.system ("ifconfig %s" %INTERFACE) == 0)
 
 def getIPAddress (interface):
     """
-        Supremely ghetto code to find local ip address.
+        Supremely ghetto code to find local ip address, returns the ip for a given interface
         From: https://code.activestate.com/recipes/439094-get-the-ip-address-associated-with-a-network-inter/
     """
     s = socket.socket (socket.AF_INET, socket.SOCK_DGRAM)
@@ -67,35 +71,40 @@ def getIPAddress (interface):
 
 
 def getPIACredentials (credentialsPath):
-    """Retrieves PIA API credentials from the file at the given path and returns them in JSON format."""
-    
-    localIP = getIPAddress ("%s" %INTERFACE)
-    
-    credentials = open (credentialsPath, "r")
-
-    jsonData = None
-    
-    try:
-        jsonData = json.dumps (OrderedDict([("user", credentials.readline ().rstrip ("\n")), ("pass", credentials.readline ().rstrip ("\n")), ("client_id", credentials.readline ().rstrip ("\n")), ("local_ip", localIP)]))
-        
-    except (IOError, OSError, FileNotFoundError):
-        print ("File: %s cannot be read or does not exist (credentials file)" %credentialsPath)
-    finally:
-        credentials.close()
-
-    return jsonData
-
-def getPIAPort (jsonData, url):
+	"""Retrieves PIA API credentials from the file at the given path and returns them in JSON format."""
+	
+	credentials = None
+	
+	try:
+	    credentials = open (credentialsPath, "r")
+	    
+	    username = credentials.readline ().rstrip ("\n")
+	    password = credentials.readline ().rstrip ("\n")
+	    clientID = credentials.readline ().rstrip ("\n")
+	    localIP = getIPAddress (INTERFACE);
+	    
+	    credentials.close ()
+	    
+	    return {"user": username, "pass": password, "client_id": clientID, "local_ip": localIP}
+	except (IOError, OSError):
+		print ("Credentials file: %s does not exist or cannot be opened" %credentialsPath)
+		
+		if not credentials == None:
+		    credentials.close ()
+		    
+		sys.exit ()
+			
+def getPIAPort (data, url):
     """
-        Contacts the PIA API at the given URL with the given JSON payload to find the currently forwarded port.
-        Returns the port number as JSON.
+        Contacts the PIA API at the given URL with the given payload to find the currently forwarded port.
+        Returns the port number as a string.
     """
     
-    request = urllib.request.Request (url)
-    request.add_header ("Content-Type", "application/json")
+    parameters = urllib.parse.urlencode (data)
+    response =  urllib.request.urlopen (PIA_URL, str.encode (parameters)).read ()
+    responseString = response.decode ("utf-8"); 
     
-    return urllib.request.urlopen (request, str.encode (json.dumps (jsonData)))
-
+    return responseString
 
 def updateTransmissionConfig (configPath, port):
     """
@@ -103,28 +112,44 @@ def updateTransmissionConfig (configPath, port):
         Transmission is killed and restarted in the process.
     """
     
-    settings = open (configPath, "r+")
+    os.system ("pkill %s" %TRANSMISSION_PROCESS_NAME)
+    print ("Transmission killed, you will need to restart it afer this script completes")
+
+    settings = None
     
     try:
+        #Open settings JSON into memory
+        settings = open (configPath, "r+")
         jsonSettings = json.load (settings)
-        jsonSettings ["peer-port"] = port  
+        
+        #Modify the JSON in memory
+        jsonSettings ["peer-port"] = int (port)
+        
+        #Write it back to the file
         settings.seek (0)
-        settings.write (json.dumps (jsonSettings, sort_keys = True))
+        settings.write (json.dumps (jsonSettings, sort_keys = True, indent = 4))
         settings.truncate ()
-    except (IOError, OSError, FileNotFoundError):
-        print ("File: %s cannot be read or does not exist (transmission settings)" %configPath)
-    finally:
-        settings.close()
+        settings.close ()
+    except (IOError, OSError):
+        print ("Transmission settings file: %s does not exist or cannot be opened" %configPath)
+        
+        if not settings == None:
+            settings.close ()
+            
+        sys.exit ()
 
 def addUFWPort (port):
     """Adds the given port to the ufw firewall (opens it)."""
     
     print ("Root access is required to update the firewall configuration:")
-    os.system ("su")
     
+    #Add rule, check exit status and exception for sudo errors
     try:
-        os.system ("ufw allow %s" %port)
-    except (IOError, OSError):
+        if os.system ("sudo ufw allow %s" %port) == 0:
+            print ("Error writing firewall rules (Was your root password correct?)")
+            sys.exit ()
+            
+    except (OSError):
         print ("Error writing firewall rules (Was your root password correct?)")
         sys.exit ()
 
@@ -136,22 +161,26 @@ def main ():
         sys.exit ()
     
     parser = ArgumentParser (description = "Configures Transmission and UFW with the forwarded port from a PIA vpn")
-    
-    parser.add_argument ("credentialsFile", help = "The PIA API credentials file, see the GitHub repository for details")
-    
+    parser.add_argument ("credentialsFile", help = "The PIA API credentials file, see the GitHub readme for details")
     args = parser.parse_args ()
     
-    jsonData = getPIACredentials (args.credentialsFile)
+    data = getPIACredentials (args.credentialsFile)
+    response = getPIAPort (data, PIA_URL)
+    port = response [8:-1]
     
-    print ("Encoded JSON: %s" %jsonData)
-        
-    port = getPIAPort (jsonData, PIA_URL)
-
-    print ("API return JSON: %s" %port.read ())
+    print ("API response received: %s" %response)
+    
+    if "error" in response:
+        print ("API error, check your credentials")
+        sys.exit ()
     
     updateTransmissionConfig (TRANSMISSION_CONFIG_PATH, port)
+    print ("Updated Transmission settings file")
     
     addUFWPort (port)
+    print ("Updated UFW rules");
+    
+    print ("All done")
     
 if  __name__ == "__main__":
     main ()
