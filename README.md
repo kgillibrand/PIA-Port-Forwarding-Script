@@ -20,3 +20,5 @@ Notes and issues:
 - This script will kill Transmission to update it's settings file, it will not restart it (the script reminds you).
 - API erros are checked in a very basic way, true JSON parsing for the response would be better.
 - Exception handling with file I/O could be better but I had issues with "with using" and "try/catch/finally"
+- The script will sleep for 10 seconds after killing Transmission because Transmission will not close right away if torrents are active. A better soloution would be to wait until the process is terminated but I don't know of a simple way to do that in Python when calling linux terminal functions.
+- The PIA API seems to return an out of date port number sometimes. The API documentation is very threadbare but there seems to be no way for me to fix this.
