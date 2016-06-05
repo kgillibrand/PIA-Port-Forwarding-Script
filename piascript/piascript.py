@@ -164,6 +164,10 @@ def addUFWPort (port):
 def main ():
     """Main method that takes the PIA credentials file as a command line argument"""
     
+    print ("Private Internet Access Configuration Script - Copyright Kieran Gillibrand, 2016 (see license)")
+    print ("https://github.com/Favorablestream")
+    print ()
+
     if not isConnected ():
         print ("PIA VPN is not connected, please connect it first")
         sys.exit ()
