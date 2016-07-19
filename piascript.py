@@ -75,29 +75,29 @@ def getIPAddress (interface):
 
 
 def getPIACredentials (credentialsPath):
-	"""Retrieves PIA API credentials from the file at the given path and returns them in JSON format."""
-	
-	credentials = None
-	
-	try:
-	    credentials = open (credentialsPath, "r")
-	    
-	    username = credentials.readline ().rstrip ("\n")
-	    password = credentials.readline ().rstrip ("\n")
-	    clientID = credentials.readline ().rstrip ("\n")
-	    localIP = getIPAddress (INTERFACE);
-	    
-	    credentials.close ()
-	    
-	    return {"user": username, "pass": password, "client_id": clientID, "local_ip": localIP}
-	except (IOError, OSError):
-		print ("Credentials file: %s does not exist or cannot be opened" %credentialsPath)
-		
-		if not credentials == None:
-		    credentials.close ()
-		    
-		sys.exit ()
-			
+        """Retrieves PIA API credentials from the file at the given path and returns them in JSON format."""
+        
+        credentials = None
+        
+        try:
+            credentials = open (credentialsPath, "r")
+            
+            username = credentials.readline ().rstrip ("\n")
+            password = credentials.readline ().rstrip ("\n")
+            clientID = credentials.readline ().rstrip ("\n")
+            localIP = getIPAddress (INTERFACE);
+            
+            credentials.close ()
+            
+            return {"user": username, "pass": password, "client_id": clientID, "local_ip": localIP}
+        except (IOError, OSError):
+                print ("Credentials file: %s does not exist or cannot be opened" %credentialsPath)
+                
+                if not credentials == None:
+                    credentials.close ()
+                    
+                sys.exit ()
+                        
 def getPIAPort (data, url):
     """
         Contacts the PIA API at the given URL with the given payload to find the currently forwarded port.
@@ -173,10 +173,11 @@ def main ():
         sys.exit ()
     
     parser = ArgumentParser (description = "Configures Transmission and UFW with the forwarded port from a PIA vpn")
-    parser.add_argument ("credentialsFile", help = "The PIA API credentials file, see the GitHub readme for details")
+    parser.add_argument ("credentialsfile", help = "The PIA API credentials file, see the GitHub readme for details")
+    parser.add_argument ("-apionly", "--apionly", help = "Call the API and provide the port number only, do not update Transmission or UFW", action = "store_true")
     args = parser.parse_args ()
     
-    data = getPIACredentials (args.credentialsFile)
+    data = getPIACredentials (args.credentialsfile)
     response = getPIAPort (data, PIA_URL)
     port = response [8:-1]
     
@@ -186,13 +187,14 @@ def main ():
         print ("API error, check your credentials")
         sys.exit ()
     
-    updateTransmissionConfig (TRANSMISSION_CONFIG_PATH, port)
-    print ("Updated Transmission settings file")
+    if not args.apionly:
+        updateTransmissionConfig (TRANSMISSION_CONFIG_PATH, port)
+        print ("Updated Transmission settings file")
     
-    addUFWPort (port)
-    print ("Updated UFW rules");
+        addUFWPort (port)
+        print ("Updated UFW rules");
     
-    print ("All done")
+        print ("All done")
     
 if  __name__ == "__main__":
     main ()
