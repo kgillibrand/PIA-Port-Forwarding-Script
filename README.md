@@ -1,7 +1,12 @@
 # PIAScript
 Python script which updates firewall and torrent client ports based on a VPN forwarded port
 
-Currently unfinished, personal project that is a work in progress.
+Now finished but not perfect, personal project, etc.
+
+Usage
+- -h, --help: Show help
+- credentialsfile: Mandatory first argument, file that contains PIA API credentials (see PIA link below).
+- -apionly, --apionly: Optional flag that only provides the port number but does not update Transmission and UFW configurations.
 
 This script will:
 - Check if the VPN is connected (tun0 interface exists).
