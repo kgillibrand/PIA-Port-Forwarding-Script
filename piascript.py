@@ -119,15 +119,17 @@ def main ():
     
     data = getPIACredentials (args.credentialsfile)
     response = getPIAPort (data, PIA_URL)
-    port = response [8:-1]
     
     print ("API response: %s" %response)
-    print ()
-    print ("Forwarded port: %s" %port)
     
     if "error" in response:
         print ("API error, check your credentials")
         sys.exit ()
+        
+    port = response [8:-1]
+    
+    print ()
+    print ("Forwarded port: %s" %port)
     
 if  __name__ == "__main__":
     main ()
