@@ -42,17 +42,8 @@ import time
 PIA_URL = "https://www.privateinternetaccess.com/vpninfo/port_forward_assignment"
 """API endpoint URL"""
 
-TRANSMISSION_CONFIG_PATH = "/home/kieran/.config/transmission/settings.json"
-"""Transmission settings file default location, ~/ would not open correctly for me in python"""
-
 INTERFACE = "tun0"
 """Network interface for VPN"""
-
-TRANSMISSION_PROCESS_NAME = "transmission-gt"
-"""Process name for Transmission"""
-
-KILL_SLEEP_DURATION = 10
-"""Duration to sleep in seconds after killing Transmission to allow it to close (Transmission will send data to trackers before closing if torrents are active)"""
     
 def isConnected ():
     """Checks if the client is connected to a PIA VPN, returns a boolean."""
@@ -110,57 +101,6 @@ def getPIAPort (data, url):
     
     return responseString
 
-def updateTransmissionConfig (configPath, port):
-    """
-        Updates Transmission's config file at the given path with the given port number.
-        Transmission is killed and restarted in the process.
-    """
-    
-    os.system ("pkill %s" %TRANSMISSION_PROCESS_NAME)
-    
-    print ("Sleeping for 10 seconds to allow Transmission to close")
-    time.sleep (KILL_SLEEP_DURATION)
-    
-    print ("Transmission killed, you will need to restart it afer this script completes")
-
-    settings = None
-    
-    try:
-        #Open settings JSON into memory
-        settings = open (configPath, "r+")
-        jsonSettings = json.load (settings)
-        
-        #Modify the JSON in memory
-        jsonSettings ["peer-port"] = int (port)
-        
-        #Write it back to the file
-        settings.seek (0)
-        settings.write (json.dumps (jsonSettings, sort_keys = True, indent = 4))
-        settings.truncate ()
-        settings.close ()
-    except (IOError, OSError):
-        print ("Transmission settings file: %s does not exist or cannot be opened" %configPath)
-        
-        if not settings == None:
-            settings.close ()
-            
-        sys.exit ()
-
-def addUFWPort (port):
-    """Adds the given port to the ufw firewall (opens it)."""
-    
-    print ("Root access is required to update the firewall configuration:")
-    
-    #Add rule, check exit status and exception for sudo errors
-    try:
-        if os.system ("sudo ufw allow %s" %port) != 0:
-            print ("Error writing firewall rules (Was your root password correct?)")
-            sys.exit ()
-            
-    except (OSError):
-        print ("Error writing firewall rules (Was your root password correct?)")
-        sys.exit ()
-
 def main ():
     """Main method that takes the PIA credentials file as a command line argument"""
     
@@ -174,7 +114,6 @@ def main ():
     
     parser = ArgumentParser (description = "Configures Transmission and UFW with the forwarded port from a PIA vpn")
     parser.add_argument ("credentialsfile", help = "The PIA API credentials file, see the GitHub readme for details")
-    parser.add_argument ("-apionly", "--apionly", help = "Call the API and provide the port number only, do not update Transmission or UFW", action = "store_true")
     args = parser.parse_args ()
     
     data = getPIACredentials (args.credentialsfile)
@@ -186,15 +125,6 @@ def main ():
     if "error" in response:
         print ("API error, check your credentials")
         sys.exit ()
-    
-    if not args.apionly:
-        updateTransmissionConfig (TRANSMISSION_CONFIG_PATH, port)
-        print ("Updated Transmission settings file")
-    
-        addUFWPort (port)
-        print ("Updated UFW rules");
-    
-        print ("All done")
     
 if  __name__ == "__main__":
     main ()
