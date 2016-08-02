@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """ 
-    piascript: A small script which enables port forwarding and returns the forwarded port for a Private Internet Access VPN
+    piascript: A small script which forwards a port and prints the forwarded port for a Private Internet Access VPN
     Copyright (C) 2016 Kieran Gillibrand
 
     This program is free software: you can redistribute it and/or modify
@@ -91,7 +91,7 @@ def getPIACredentials (credentialsPath):
                         
 def getPIAPort (data, url):
     """
-        Contacts the PIA API at the given URL with the given payload to find the currently forwarded port.
+        Contacts the PIA API at the given URL with the given payload to forward a port and return the port forwarded
         Returns the port number as a string.
     """
     

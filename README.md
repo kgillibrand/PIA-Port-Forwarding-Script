@@ -1,5 +1,5 @@
 # PIAScript
-Python script which updates firewall and torrent client ports based on a VPN forwarded port
+Small Python script forwards a port for a Private Internet Access vpn and prints the forwarded port.
 
 Now finished but not perfect, personal project, etc.
 
@@ -17,7 +17,8 @@ Credentials File:
 This script will:
 - Check if the VPN is connected (tun0 interface exists).
 - Read PIA API credentials from a file (path provided as a command line parameter).
-- Query the PIA API to find the forwarded port. 
+- Post to the PIA API endpoint in order to forward a port.
+- Print the forwarded port number. 
  
 Notes and issues:
 - Finding your local ip in Python is troublesome without libraries, the method I found online and used is very flaky (https://code.activestate.com/recipes/439094-get-the-ip-address-associated-with-a-network-inter/).
