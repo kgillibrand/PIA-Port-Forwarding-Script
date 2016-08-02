@@ -104,7 +104,8 @@ def getPIAPort (data, url):
 def main ():
     """Main method that takes the PIA credentials file as a command line argument"""
     
-    print ("Private Internet Access Configuration Script - Copyright Kieran Gillibrand, 2016 (see license)")
+    print ()
+    print ("Private Internet Access Port Forwarding Script - Copyright Kieran Gillibrand, 2016 (see license)")
     print ("https://github.com/Favorablestream")
     print ()
 
@@ -120,7 +121,9 @@ def main ():
     response = getPIAPort (data, PIA_URL)
     port = response [8:-1]
     
-    print ("API response received: %s" %response)
+    print ("API response: %s" %response)
+    print ()
+    print ("Forwarded port: %s" %port)
     
     if "error" in response:
         print ("API error, check your credentials")
