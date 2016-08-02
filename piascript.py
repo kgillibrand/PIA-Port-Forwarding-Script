@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """ 
-    piascript: A small script which configures Transmission and UFW based on the forwarded port of a Private Internet Access VPN
+    piascript: A small script which enables port forwarding and returns the forwarded port for a Private Internet Access VPN
     Copyright (C) 2016 Kieran Gillibrand
 
     This program is free software: you can redistribute it and/or modify
@@ -21,12 +21,12 @@
 __author__ = "Kieran Gillibrand: https://github.com/Favorablestream"
 __copyright__ = "Copyright 2016, Kieran Gillibrand"
 __credits__ = ["Duncan Gillibrand"]
-__license__ = "GNU GPL (LICENSE.txt)"
-__version__ = "1.0"
-__date__ = "02/06/2016"
+__license__ = "GNU GPL Version 3(LICENSE.txt)"
+__version__ = "1.1"
+__date__ = "02/08/2016"
 __maintainer__ = "Kieran Gillibrand"
 __email__ = "Kieran.Gillibrand6@gmail.com"
-__status__ = "Personal Project"
+__status__ = "Personal Project (finished I think)"
 
 from argparse import ArgumentParser
 import os
