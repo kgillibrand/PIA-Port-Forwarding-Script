@@ -10,6 +10,7 @@ Usage
 Credentials File:
 - See: https://www.privateinternetaccess.com/forum/discussion/180/port-forwarding-without-the-application-advanced-users to create a client id and for API documentation
 - Expected file format:
+- 
     Line 1: [PIA username]
 
     Line 2: [PIA password]
