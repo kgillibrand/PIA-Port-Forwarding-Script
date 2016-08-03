@@ -1,5 +1,5 @@
 # PIAScript
-Small Python script forwards a port for a Private Internet Access vpn and prints the forwarded port.
+Small Python script which enables port forwarding for a PIA VPN and prints the forwarded port.
 
 Now finished but not perfect, personal project, etc.
 
