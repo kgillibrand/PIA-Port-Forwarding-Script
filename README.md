@@ -3,6 +3,8 @@ Small Python script which enables port forwarding for a PIA VPN and prints the f
 
 Now finished but not perfect, personal project, etc.
 
+I do not use this for illegal downloading. I don't condone that, don't do that, etc.
+
 Usage
 - -h, --help: Show help
 - credentialsfile: Mandatory first argument, file that contains PIA API credentials (see PIA link below).
@@ -28,11 +30,10 @@ Notes and issues:
 - This script calls some Linux command line functions and is not portable.
 - This is my first Python program and first use of JSON, made in my spare time.
 - This script will not work for other VPN providers as is
-- This script will kill Transmission to update it's settings file, it will not restart it (the script reminds you).
 - API erros are checked in a very basic way, true JSON parsing for the response would be better.
-- Exception handling with file I/O could be better but I had issues with "with using" and "try/catch/finally"
+- Exception handling with file I/O could be better but I had issues with Python's "with using" and "try/catch/finally"
 - The PIA API seems to return an out of date port number sometimes. The API documentation is very threadbare but there seems to be no way for me to fix this. Try running it again.
-- I removed ufw firewall and transmission functionality since I switched to Fedora from Mint and qbittorrent from transmission
+- I removed ufw firewall and transmission functionality since I switched to Fedora from Mint and qbittorrent from transmission.
 
 Other steps:
 - I use an iptables based vpn kill-switch script: http://forum.ibvpn.com/topic/9-vpn-openvpn-firewall-killswitch-for-linux-users/ , https://gist.github.com/adrelanos/10565852
