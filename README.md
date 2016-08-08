@@ -1,7 +1,10 @@
 # PIAScript
-Small Python script forwards a port for a Private Internet Access VPN and prints the forwarded port.
+
+Small Python script which enables port forwarding for a PIA VPN and prints the forwarded port.
 
 Now finished but not perfect, personal project, etc.
+
+I do not use this for illegal downloading. I don't condone that, don't do that, etc.
 
 Usage
 - -h, --help: Show help.
@@ -22,19 +25,19 @@ Dependancies
 - The Python 3 netifaces library (look for a package for your distribution or use Python's easy_install).
 
 This script will:
-- Check if the VPN is connected (tun0 interface exists).
+- Check if the VPN is connected (tun0 interface is active).
 - Read PIA API credentials from a file (path provided as a command line parameter).
 - Post to the PIA API endpoint in order to forward a port.
 - Print the forwarded port number. 
- 
+
 Notes and issues:
 - This is my first Python program, made in my spare time.
 - This script will not work for other VPN providers as is.
-- API erros are checked in a very basic way but the API documentation is too threadbare.
+- API erros are checked in a very basic way but the API documentation does not list any specific errors.
 - Exception handling with file I/O could be better but I had issues with "with using" and "try/catch/finally".
 - The PIA API seems to return an out of date port number sometimes. The API documentation is very threadbare but there seems to be no way for me to fix this. Try waiting a few minutes and running it again.
-- I removed ufw firewall and transmission functionality to simplify the script's purpose.
-- This script should be portable now that I changed the network querying to use the netifaces library.
+- I removed ufw firewall and transmission functionality to simplify the script's purpose adn because I don't use them anymore.
+- This script should be portable now that I changed the network querying to use the netifaces library and removed the use of GNU/Linux command line tools.
 
 Other steps:
 - I use an iptables based vpn kill-switch script: http://forum.ibvpn.com/topic/9-vpn-openvpn-firewall-killswitch-for-linux-users/ , https://gist.github.com/adrelanos/10565852 =
