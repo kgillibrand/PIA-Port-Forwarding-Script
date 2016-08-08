@@ -34,9 +34,7 @@ This script will:
 Notes and issues:
 - This is my first Python program, made in my spare time.
 - This script will not work for other VPN providers as is.
-- Exception handling with file I/O could be better but I had issues with "with using" and "try/catch/finally".
 - The PIA API sometimes returns a port that is closed if you have been reconnecting a lot. Try waiting a few minutes and trying again.
-- I removed ufw firewall and transmission functionality to simplify the script's purpose and because I don't use them anymore.
 - This script should be portable now that I changed the network querying to use the netifaces library and removed the use of GNU/Linux command line tools.
 
 Downloading and Usage
@@ -49,6 +47,8 @@ Downloading and Usage
 
 4. Execute the script and provide the path to the file
 
+5. Add an exception in your firewall for the port and update the port settings for applications that you are using
+
 Other steps:
-- You will have to update the INTERFACE variable if your VPN is using an interface other than tun0 (OpenVPN and the official PIA appplication (OpenVPN backend) both use tun0 by default).
+- You will have to update the INTERFACE variable if your VPN is using an interface other than tun0 (OpenVPN uses tun0 by default in my experience).
 

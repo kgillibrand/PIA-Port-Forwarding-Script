@@ -91,33 +91,27 @@ def getCredentials (credentialsPath: str) -> dict:
         credentials = None
         
         try:
-            credentials = open (credentialsPath, "r")
-            
-            username = credentials.readline ().rstrip ("\n")
-            password = credentials.readline ().rstrip ("\n")
-            clientID = credentials.readline ().rstrip ("\n")
-            localIP = getIPAddress (INTERFACE)
-            
-            credentials.close ()
+            with open (credentialsPath) as credentials:
+                username = credentials.readline ().rstrip ("\n")
+                password = credentials.readline ().rstrip ("\n")
+                clientID = credentials.readline ().rstrip ("\n")
+                localIP = getIPAddress (INTERFACE)
+                
+                if DEBUG:
+                    print ("Using credentials file: %s" %credentialsPath)
+                    print ()
+                    print ("Username: %s" %username)
+                    print ("Password: %s" %password)
+                    print ("Client ID: %s" %clientID)
+                    print ()
 
-            if DEBUG:
-                print ("Using credentials file: %s" %credentialsPath)
-                print ()
-                print ("Username: %s" %username)
-                print ("Password: %s" %password)
-                print ("Client ID: %s" %clientID)
-                print ()
-
-            return {"user": username, "pass": password, "client_id": clientID, "local_ip": localIP}
+                return {"user": username, "pass": password, "client_id": clientID, "local_ip": localIP}
 
         except (IOError, OSError):
-                print ("Credentials file: %s does not exist or cannot be opened" %credentialsPath)
-                print ()
+            print ("Credentials file: %s does not exist or cannot be opened" %credentialsPath)
+            print ()
                 
-                if not credentials == None:
-                    credentials.close ()
-                    
-                sys.exit ()
+            sys.exit ()
                         
 def forwardPort (credentials: dict, endpointURL: str) -> dict:
     """
