@@ -40,10 +40,15 @@ Notes and issues:
 - This script should be portable now that I changed the network querying to use the netifaces library and removed the use of GNU/Linux command line tools.
 
 Downloading and Usage
+
 1. Download the entire repository as .zip
+
 2. Make sure piascript.py is executable
+
 3. Create your API credentials file (see above)
+
 4. Execute the script and provide the path to the file
+
 
 Other steps:
 - I use an iptables based vpn kill-switch script: http://forum.ibvpn.com/topic/9-vpn-openvpn-firewall-killswitch-for-linux-users/ , https://gist.github.com/adrelanos/10565852 =
