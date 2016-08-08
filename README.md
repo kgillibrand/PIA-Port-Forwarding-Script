@@ -8,7 +8,8 @@ I do not use this for illegal downloading. I don't condone that, don't do that, 
 
 Usage
 - -h, --help: Show help.
-- credentialsfile: Mandatory first argument, file that contains PIA API credentials (see PIA link below).
+- -debug, --debug: Show debugging print statements
+- credentialsfile: Mandatory argument, file that contains PIA API credentials (see below).
 
 Credentials File:
 - See: https://www.privateinternetaccess.com/forum/discussion/180/port-forwarding-without-the-application-advanced-users to create a client id and for API documentation.
@@ -28,14 +29,13 @@ This script will:
 - Check if the VPN is connected (tun0 interface is active).
 - Read PIA API credentials from a file (path provided as a command line parameter).
 - Post to the PIA API endpoint in order to forward a port.
-- Print the forwarded port number. 
+- Parse the response and print it (port number or error message)
 
 Notes and issues:
 - This is my first Python program, made in my spare time.
 - This script will not work for other VPN providers as is.
-- API erros are checked in a very basic way but the API documentation does not list any specific errors.
 - Exception handling with file I/O could be better but I had issues with "with using" and "try/catch/finally".
-- The PIA API seems to return an out of date port number sometimes. The API documentation is very threadbare but there seems to be no way for me to fix this. Try waiting a few minutes and running it again.
+- The PIA API sometimes returns a port that is closed if you have been reconnecting a lot. Try waiting a few minutes and trying again.
 - I removed ufw firewall and transmission functionality to simplify the script's purpose and because I don't use them anymore.
 - This script should be portable now that I changed the network querying to use the netifaces library and removed the use of GNU/Linux command line tools.
 
@@ -49,8 +49,6 @@ Downloading and Usage
 
 4. Execute the script and provide the path to the file
 
-
 Other steps:
-- I use an iptables based vpn kill-switch script: http://forum.ibvpn.com/topic/9-vpn-openvpn-firewall-killswitch-for-linux-users/ , https://gist.github.com/adrelanos/10565852 =
-- You will have to update the INTERFACE variable if your VPN is using an interface other than tun0 (OpenVPN and the official PIA appplication both use tun0 by default).
+- You will have to update the INTERFACE variable if your VPN is using an interface other than tun0 (OpenVPN and the official PIA appplication (OpenVPN backend) both use tun0 by default).
 
