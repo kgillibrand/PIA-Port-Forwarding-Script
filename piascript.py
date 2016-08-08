@@ -21,23 +21,21 @@
 __author__ = "Kieran Gillibrand: https://github.com/Favorablestream"
 __copyright__ = "Copyright 2016, Kieran Gillibrand"
 __credits__ = ["Duncan Gillibrand"]
-__license__ = "GNU GPL Version 3(LICENSE.txt)"
-__version__ = "1.1"
-__date__ = "02/08/2016"
+__license__ = "GNU GPL Version 3 (LICENSE.txt)"
+__version__ = "1.2"
+__date__ = "07/08/2016"
 __maintainer__ = "Kieran Gillibrand"
 __email__ = "Kieran.Gillibrand6@gmail.com"
 __status__ = "Personal Project (finished I think)"
 
 from argparse import ArgumentParser
-import os
-import sys
-import json
+
 import urllib.request
 import urllib.parse
-import socket
-import fcntl
-import struct
-import time
+
+import netifaces
+from netifaces import AF_INET
+
 
 PIA_URL = "https://www.privateinternetaccess.com/vpninfo/port_forward_assignment"
 """API endpoint URL"""
@@ -45,28 +43,29 @@ PIA_URL = "https://www.privateinternetaccess.com/vpninfo/port_forward_assignment
 INTERFACE = "tun0"
 """Network interface for VPN"""
     
-def isConnected ():
-    """Checks if the client is connected to a PIA VPN, returns a boolean."""
-
-    #Checks exit status of ifconfig INTERFACE (0 for success, non 0 for error)
-    return (os.system ("ifconfig %s" %INTERFACE) == 0)
+def isConnected (interface):
+    """
+        Checks if the client is connected to a PIA VPN (Boolean)
+        
+        interface (String): The name of the interface to check
+    """
+    
+    return interface in netifaces.interfaces ()
 
 def getIPAddress (interface):
     """
-        Supremely ghetto code to find local ip address, returns the ip for a given interface
-        From: https://code.activestate.com/recipes/439094-get-the-ip-address-associated-with-a-network-inter/
+        Returns the IP address (String)
+        
+        interface (String): The name of the interface to get the ip for
     """
-    s = socket.socket (socket.AF_INET, socket.SOCK_DGRAM)
-    return socket.inet_ntoa (fcntl.ioctl
-    (
-        s.fileno (),
-        0x8915, # SIOCGIFADDR
-        struct.pack ("256s", str.encode (interface [:15]))
-    )[20:24])
+    return netifaces.ifaddresses (interface) [AF_INET] [0] ['addr']
 
-
-def getPIACredentials (credentialsPath):
-        """Retrieves PIA API credentials from the file at the given path and returns them in JSON format."""
+def getCredentials (credentialsPath):
+        """
+            Retrieves PIA API credentials (Dictionary)
+            
+            credentialsPath (String): The path to the credentials file
+        """
         
         credentials = None
         
@@ -89,14 +88,16 @@ def getPIACredentials (credentialsPath):
                     
                 sys.exit ()
                         
-def getPIAPort (data, url):
+def forwardPort (credentials, url):
     """
-        Contacts the PIA API at the given URL with the given payload to forward a port and return the port forwarded
-        Returns the port number as a string.
+        Contacts the PIA API to enable port forwarding and returns the forwarded port number (String)
+
+        credentials (Dictionary): The credentials extracted from a file by getPIACredentials ()
+        url (String): The endpoint URL
     """
     
-    parameters = urllib.parse.urlencode (data)
-    response =  urllib.request.urlopen (PIA_URL, str.encode (parameters)).read ()
+    parameters = urllib.parse.urlencode (credentials)
+    response =  urllib.request.urlopen (url, str.encode (parameters)).read ()
     responseString = response.decode ("utf-8"); 
     
     return responseString
@@ -109,7 +110,7 @@ def main ():
     print ("https://github.com/Favorablestream")
     print ()
 
-    if not isConnected ():
+    if not isConnected (INTERFACE):
         print ("PIA VPN is not connected, please connect it first")
         sys.exit ()
     
@@ -117,8 +118,9 @@ def main ():
     parser.add_argument ("credentialsfile", help = "The PIA API credentials file, see the GitHub readme for details")
     args = parser.parse_args ()
     
-    data = getPIACredentials (args.credentialsfile)
-    response = getPIAPort (data, PIA_URL)
+    credentials = getCredentials (args.credentialsfile)
+    
+    response = forwardPort (credentials, PIA_URL)
     
     print ("API response: %s" %response)
     
@@ -130,6 +132,9 @@ def main ():
     
     print ()
     print ("Forwarded port: %s" %port)
+    print ()
+    
+    print ("Have a nice day =)")
     
 if  __name__ == "__main__":
     main ()
