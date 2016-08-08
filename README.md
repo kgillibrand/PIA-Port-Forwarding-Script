@@ -36,10 +36,10 @@ Notes and issues:
 - API erros are checked in a very basic way but the API documentation does not list any specific errors.
 - Exception handling with file I/O could be better but I had issues with "with using" and "try/catch/finally".
 - The PIA API seems to return an out of date port number sometimes. The API documentation is very threadbare but there seems to be no way for me to fix this. Try waiting a few minutes and running it again.
-- I removed ufw firewall and transmission functionality to simplify the script's purpose adn because I don't use them anymore.
+- I removed ufw firewall and transmission functionality to simplify the script's purpose and because I don't use them anymore.
 - This script should be portable now that I changed the network querying to use the netifaces library and removed the use of GNU/Linux command line tools.
 
 Other steps:
 - I use an iptables based vpn kill-switch script: http://forum.ibvpn.com/topic/9-vpn-openvpn-firewall-killswitch-for-linux-users/ , https://gist.github.com/adrelanos/10565852 =
-- You will have to update the INTERFACE variable if your VPN is using an interface other than tun0 (Open VPN and the official PIA appplication both use tun0 by default).
+- You will have to update the INTERFACE variable if your VPN is using an interface other than tun0 (OpenVPN and the official PIA appplication both use tun0 by default).
 
