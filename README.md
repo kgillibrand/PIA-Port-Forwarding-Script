@@ -26,13 +26,14 @@ Dependancies
 - The Python 3 netifaces library (look for a package for your distribution or use Python's easy_install).
 
 This script will:
-- Check if the VPN is connected (tun0 interface is active).
+- Check if the VPN is connected (the interface is active).
+- Find the local IP address for that interface.
 - Read PIA API credentials from a file (path provided as a command line parameter).
 - Post to the PIA API endpoint in order to forward a port.
-- Parse the response and print it (port number or error message)
+- Parse the response and print it (port number or error message).
 
 Notes and issues:
-- This is my first Python program, made in my spare time.
+- This is my first Python program, made in my spare time but updated since.
 - This script will not work for other VPN providers as is.
 - The PIA API sometimes returns a port that is closed if you have been reconnecting a lot. Try waiting a few minutes and trying again.
 - This script should be portable now that I changed the network querying to use the netifaces library and removed the use of GNU/Linux command line tools.
