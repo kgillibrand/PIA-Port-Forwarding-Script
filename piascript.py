@@ -149,7 +149,7 @@ def main ():
     print ("https://github.com/Favorablestream")
     print ()
     
-    parser = ArgumentParser (description = "Configures Transmission and UFW with the forwarded port from a PIA vpn")
+    parser = ArgumentParser (description = "Enables port forwarding for a Private Internet Access VPN and displays the forwarded port")
     parser.add_argument ("-debug", "--debug", help = "Display debugging print statements", action = "store_true")
     parser.add_argument ("credentialsfile", help = "The PIA API credentials file, see the GitHub readme for details")
     args = parser.parse_args ()
