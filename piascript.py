@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+#License
 """ 
     piascript: A small script which forwards a port and prints the forwarded port for a Private Internet Access VPN
     Copyright (C) 2016 Kieran Gillibrand
@@ -18,6 +19,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
     
+#Metadata
 __author__ = "Kieran Gillibrand: https://github.com/Favorablestream"
 __copyright__ = "Copyright 2016, Kieran Gillibrand"
 __credits__ = ["Duncan Gillibrand"]
@@ -28,6 +30,7 @@ __maintainer__ = "Kieran Gillibrand"
 __email__ = "Kieran.Gillibrand6@gmail.com"
 __status__ = "Personal Project (finished I think)"
 
+#Imports
 import sys
 
 from argparse import ArgumentParser
@@ -41,6 +44,7 @@ import netifaces
 from netifaces import AF_INET
 
 
+#Constants
 PIA_ENDPOINT = "https://www.privateinternetaccess.com/vpninfo/port_forward_assignment"
 """API endpoint URL"""
 
@@ -49,7 +53,11 @@ INTERFACE = "tun0"
 
 DEBUG = False
 """Flag for debugging statements (set by -debug/--debug command line option)"""
-    
+
+ENCODING = "utf-8"
+"""Text encoding to use for decoding API response"""
+
+#Code
 def isConnected (interface: str) -> bool:
     """
         Checks if the client is connected to a PIA VPN (Boolean)
@@ -73,10 +81,10 @@ def getIPAddress (interface: str) -> str:
         interface (String): The name of the interface to get the ip for
     """
 
-    ip = netifaces.ifaddresses (interface) [AF_INET] [0] ['addr']
+    ip = netifaces.ifaddresses (interface) [AF_INET] [0] ["addr"]
 
     if DEBUG:
-        print ("Local IP for VPN interface: %s is %s" %(interface, ip))
+        print ("Local IP for VPN interface %s: %s" %(interface, ip))
         print ()
 
     return ip
@@ -85,27 +93,25 @@ def getCredentials (credentialsPath: str) -> dict:
         """
             Retrieves PIA API credentials (Dictionary)
             
-            credentialsPath (String): The path to the credentials file
+            credentialsPath (String): The path to the credentials JSON file
         """
         
-        credentials = None
-        
         try:
-            with open (credentialsPath) as credentials:
-                username = credentials.readline ().rstrip ("\n")
-                password = credentials.readline ().rstrip ("\n")
-                clientID = credentials.readline ().rstrip ("\n")
-                localIP = getIPAddress (INTERFACE)
+            with open (credentialsPath) as credentialsFile:
+                
+                credentials = json.loads (credentialsFile.read ())
+                
+                credentials ["local_ip"] = getIPAddress (INTERFACE)
                 
                 if DEBUG:
                     print ("Using credentials file: %s" %credentialsPath)
                     print ()
-                    print ("Username: %s" %username)
-                    print ("Password: %s" %password)
-                    print ("Client ID: %s" %clientID)
+                    print ("Username: %s" %credentials ["user"])
+                    print ("Password: %s" %credentials ["pass"])
+                    print ("Client ID: %s" %credentials ["client_id"])
                     print ()
 
-                return {"user": username, "pass": password, "client_id": clientID, "local_ip": localIP}
+                return credentials
 
         except (IOError, OSError):
             print ("Credentials file: %s does not exist or cannot be opened" %credentialsPath)
@@ -117,7 +123,7 @@ def forwardPort (credentials: dict, endpointURL: str) -> dict:
     """
         Contacts the PIA API to enable port forwarding and returns the API response (Dictionary)
 
-        credentials (Dictionary): The credentials extracted from a file by getPIACredentials ()
+        credentials (Dictionary): The credentials extracted from a JSON file by getPIACredentials ()
         url (String): The endpoint URL
     """
 
@@ -127,7 +133,7 @@ def forwardPort (credentials: dict, endpointURL: str) -> dict:
 
     parameters = urllib.parse.urlencode (credentials)
     response =  urllib.request.urlopen (endpointURL, str.encode (parameters)).read ()
-    responseString = response.decode ("utf-8")
+    responseString = response.decode (ENCODING)
 
     if DEBUG:
         print ("API response JSON: %s" %responseString)
@@ -136,7 +142,7 @@ def forwardPort (credentials: dict, endpointURL: str) -> dict:
     return json.loads (responseString)
 
 def main ():
-    """Main method that takes the PIA credentials file as a command line argument"""
+    """Main method that takes command line arguments"""
     
     print ()
     print ("Private Internet Access Port Forwarding Script - Copyright Kieran Gillibrand, 2016 (see license)")
@@ -145,9 +151,10 @@ def main ():
     
     parser = ArgumentParser (description = "Enables port forwarding for a Private Internet Access VPN and displays the forwarded port")
     parser.add_argument ("-debug", "--debug", help = "Display debugging print statements", action = "store_true")
-    parser.add_argument ("credentialsfile", help = "The PIA API credentials file, see the GitHub readme for details")
+    parser.add_argument ("credentialsfile", help = "The PIA API JSON credentials file, see README.md for details")
     args = parser.parse_args ()
 
+    #Override global debug flag if -debug/--debug command line flag is used
     global DEBUG
     DEBUG = args.debug
 
@@ -157,6 +164,7 @@ def main ():
 
     if not isConnected (INTERFACE):
         print ("VPN on interface: %s is not connected, please connect it first" %INTERFACE)
+        
         sys.exit ()
 
     credentials = getCredentials (args.credentialsfile)
@@ -171,6 +179,7 @@ def main ():
 
     elif "error" in response:
         print ("API returned an error: %s" %response ["error"])
+        
         sys.exit ()
 
     else:
