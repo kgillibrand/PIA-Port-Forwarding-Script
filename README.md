@@ -4,8 +4,6 @@ Small Python script which enables port forwarding for a PIA VPN and prints the f
 
 Now finished but not perfect, personal project, etc.
 
-I do not use this for illegal downloading. I don't condone that, don't do that, etc.
-
 Usage
 - -h, --help: Show help.
 - -debug, --debug: Show debugging print statements.
