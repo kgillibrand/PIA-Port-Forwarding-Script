@@ -34,6 +34,7 @@ Script Operation
 Notes and Issues
 - This is my first Python program, made in my spare time but updated since.
 - This script will not work for other VPN providers as is.
+- Not all PIA gateways support port forwarding, make sure yours does: https://www.privateinternetaccess.com/pages/client-support/#sixth
 - The PIA API sometimes returns a port that is closed if you have been reconnecting a lot. Try waiting a few minutes and trying again.
 - This script should be portable now that I changed the network querying to use the netifaces library and removed the use of GNU/Linux command line tools.
 - This script is written to be portable but it needs the correct interface name which is an issue. Non GNU/Linux OS users will have a different interface name though Windows and Mac users can use the official PIA application which offers port forwarding built-in. The default interface is tun0 so update the INTERFACE variable if you are told that you are not connected when you are.

@@ -31,7 +31,8 @@ __email__ = "Kieran.Gillibrand6@gmail.com"
 __status__ = "Personal Project (finished I think)"
 
 #Imports
-import sys
+import netifaces
+from netifaces import AF_INET
 
 from argparse import ArgumentParser
 
@@ -40,9 +41,7 @@ import urllib.parse
 
 import json
 
-import netifaces
-from netifaces import AF_INET
-
+import sys
 
 #Constants
 PIA_ENDPOINT = "https://www.privateinternetaccess.com/vpninfo/port_forward_assignment"
@@ -117,7 +116,7 @@ def getCredentials (credentialsPath: str) -> dict:
             print ("Credentials file: %s does not exist or cannot be opened" %credentialsPath)
             print ()
                 
-            sys.exit ()
+            sys.exit (1)
                         
 def forwardPort (credentials: dict, endpointURL: str) -> dict:
     """
@@ -165,7 +164,7 @@ def main ():
     if not isConnected (INTERFACE):
         print ("VPN on interface: %s is not connected, please connect it first" %INTERFACE)
         
-        sys.exit ()
+        sys.exit (1)
 
     credentials = getCredentials (args.credentialsfile)
     
@@ -180,13 +179,13 @@ def main ():
     elif "error" in response:
         print ("API returned an error: %s" %response ["error"])
         
-        sys.exit ()
+        sys.exit (1)
 
     else:
         for key, value in response.items ():
             print ("API returned unknown value: %s: %s" %(key, value))
 
-        sys.exit ()
+        sys.exit (1)
 
     print ()
 
