@@ -4,8 +4,6 @@ Small Python script which enables port forwarding for a PIA VPN and prints the f
 
 Now finished but not perfect, personal project, etc.
 
-I do not use this for illegal downloading. I don't condone that, don't do that, etc.
-
 Usage
 - -h, --help: Show help.
 - -debug, --debug: Show debugging print statements.
@@ -39,7 +37,7 @@ Notes and Issues
 - The PIA API sometimes returns a port that is closed if you have been reconnecting a lot. Try waiting a few minutes and trying again.
 - This script should be portable now that I changed the network querying to use the netifaces library and removed the use of GNU/Linux command line tools.
 - This script is written to be portable but it needs the correct interface name which is an issue. Non GNU/Linux OS users will have a different interface name though Windows and Mac users can use the official PIA application which offers port forwarding built-in. The default interface is tun0 so update the INTERFACE variable if you are told that you are not connected when you are.
-- The API documentation given by PIA is very limited. I have no idea why a client ID is needed (every client should have a unique username) and what the ramifications are if you ever change it or if someone guesses yours (the link above recommends creating a strong random one). PIA limits you to 5 simaltaneous devices so this might be to differentiate them but the API requires you to provide your local VPN IP as well so who knows ¯\_(ツ)_/¯.
+- The API documentation given by PIA is very limited. I have no idea why a client ID is needed (every client will have a unique username) and what the ramifications are if you ever change it or if someone guesses yours (the link above recommends creating a strong random one). PIA limits you to 5 simaltaneous devices so this might be to differentiate them but the API requires you to provide your local VPN IP as well so who knows ¯\\\_(ツ)_/¯.
 
 Downloading and Usage
 
