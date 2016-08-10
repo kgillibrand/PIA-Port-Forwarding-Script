@@ -97,7 +97,6 @@ def getCredentials (credentialsPath: str) -> dict:
         
         try:
             with open (credentialsPath) as credentialsFile:
-                
                 credentials = json.loads (credentialsFile.read ())
                 
                 credentials ["local_ip"] = getIPAddress (INTERFACE)
