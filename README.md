@@ -1,5 +1,7 @@
 # PIA Port Forwarding Script
 
+Copyright Kieran Gillibrand 2016 (MIT License)
+
 Small Python script which enables port forwarding for a PIA VPN and prints the forwarded port.
 
 Now finished but not perfect, personal project, etc.

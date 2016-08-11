@@ -168,7 +168,7 @@ def main ():
     '''Text encoding to use for decoding API response'''
 
     print ()
-    print ('Private Internet Access Port Forwarding Script - Copyright Kieran Gillibrand, 2016 (see license)')
+    print ('Private Internet Access Port Forwarding Script - Copyright Kieran Gillibrand, 2016 (MIT License)')
     print ('https://github.com/Favorablestream')
     print ()
     
