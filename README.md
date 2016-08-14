@@ -45,7 +45,7 @@ Notes and Issues
 
 Downloading and Usage
 
-1. Download the entire repository as .zip
+1. Download piascript.py from the releases page or download a source code archive (adds the License and Readme files).
 
 2. Make piascript.py executable
 
