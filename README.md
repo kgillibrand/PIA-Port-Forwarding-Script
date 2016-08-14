@@ -45,9 +45,9 @@ Notes and Issues
 
 Downloading and Usage
 
-1. Download piascript.py from the releases page or download a source code archive (includes the same script along with the License and Readme files).
+1. Download piascript.pyc from the releases page or download a source code archive (includes the non-compiled script along with the License and Readme files).
 
-2. Make piascript.py executable
+2. Make the script executable
 
 3. Create your API credentials JSON file (see above)
 
