@@ -33,15 +33,17 @@
 '''
 
 #Metadata
-__author__ = 'Kieran Gillibrand: https://github.com/Favorablestream'
+__title__ = 'Private Internet Access Port Forwarding Script'
+__author__ = 'Kieran Gillibrand'
+__host__ = 'https://github.com/Favorablestream'
 __copyright__ = 'Copyright 2016 Kieran Gillibrand'
 __credits__ = ['Duncan Gillibrand']
 __license__ = 'MIT License (LICENSE.txt)'
-__version__ = '1.0'
-__date__ = '13/08/2016'
+__version__ = '1.0.1'
+__date__ = '14/08/2016'
 __maintainer__ = 'Kieran Gillibrand'
 __email__ = 'Kieran.Gillibrand6@gmail.com'
-__status__ = 'Personal Project (finished I think)'
+__status__ = 'Personal Project (released)'
 
 #Imports
 import netifaces
@@ -81,7 +83,7 @@ def getIPAddress (interface: str) -> str:
     '''
         Returns the IP address (String)
         
-        interface (String): The name of the interface to get the ip for
+        interface (String): The name of the interface to get the IP for
     '''
 
     ip = netifaces.ifaddresses (interface) [AF_INET] [0] ['addr']
@@ -149,6 +151,7 @@ def forwardPort (credentials: dict, endpointURL: str, encoding: str) -> dict:
     responseString = response.decode (encoding)
 
     if DEBUG:
+        print ('Decoded API response as: \'%s\'' %encoding)
         print ('API response JSON: \'%s\'' %responseString)
         print ()
 
@@ -168,8 +171,9 @@ def main ():
     '''Text encoding to use for decoding API response'''
 
     print ()
-    print ('Private Internet Access Port Forwarding Script - Copyright Kieran Gillibrand, 2016 (MIT License)')
-    print ('https://github.com/Favorablestream')
+    print ('%s - %s, %s' %(__title__, __copyright__, __license__))
+    print ('Version: %s, %s' %(__version__, __date__))
+    print ('%s' %__host__)
     print ()
     
     parser = ArgumentParser (description = 'Enables port forwarding for a Private Internet Access VPN and displays the forwarded port')
@@ -194,8 +198,9 @@ def main ():
     
     response = forwardPort (credentials, PIA_ENDPOINT, ENCODING)
     
-    print ('Response recieved')
-    print ()
+    if not DEBUG:
+        print ('Response recieved')
+        print ()
 
     #Standard response
     if 'port' in response:
@@ -219,7 +224,7 @@ def main ():
     print ()
 
     print ('Make sure to allow this port in your firewall and configure your applications to use it.')
-    print ('Have a nice day =)')
+    print ('Have a nice day :)')
     
 if  __name__ == '__main__':
     main ()
