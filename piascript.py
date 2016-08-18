@@ -132,7 +132,7 @@ def getCredentials (credentialsPath: str, interface: str) -> dict:
             
             sys.exit (1)
                         
-def forwardPort (credentials: dict, endpointURL: str, encoding: str) -> dict:
+def forwardPort (credentials: dict, endpointURL: str, encoding: str, timeout: int) -> dict:
     '''
         Contacts the PIA API to enable port forwarding and returns the API response (Dictionary)
 
@@ -147,21 +147,23 @@ def forwardPort (credentials: dict, endpointURL: str, encoding: str) -> dict:
 
     parameters = urllib.parse.urlencode (credentials)
     
-    response =  urllib.request.urlopen (endpointURL, str.encode (parameters)).read ()
-    responseString = response.decode (encoding)
+    with urllib.request.urlopen (endpointURL, str.encode (parameters), timeout) as connection:
+        response = connection.read ()
+        
+        responseString = response.decode (encoding)
 
-    if DEBUG:
-        print ('Decoded API response as: \'%s\'' %encoding)
-        print ('API response JSON: \'%s\'' %responseString)
-        print ()
+        if DEBUG:
+            print ('Decoded API response as: \'%s\'' %encoding)
+            print ('API response JSON: \'%s\'' %responseString)
+            print ()
 
-    return json.loads (responseString)
+        return json.loads (responseString)
 
 def main ():
     '''Main method that takes command line arguments'''
     
     #Local Constants
-    PIA_ENDPOINT = 'https://www.privateinternetaccess.com/vpninfo/port_forward_assignment'
+    ENDPOINT = 'https://www.privateinternetaccess.com/vpninfo/port_forward_assignment'
     '''API endpoint URL'''
 
     INTERFACE = 'tun0'
@@ -169,6 +171,9 @@ def main ():
 
     ENCODING = 'utf-8'
     '''Text encoding to use for decoding API response'''
+    
+    TIMEOUT = 6
+    '''Timeout in seconds when connecting to the API endpoint'''
 
     print ()
     print ('%s - %s, %s' %(__title__, __copyright__, __license__))
@@ -196,7 +201,7 @@ def main ():
 
     credentials = getCredentials (args.credentialsfile, INTERFACE)
     
-    response = forwardPort (credentials, PIA_ENDPOINT, ENCODING)
+    response = forwardPort (credentials, ENDPOINT, ENCODING, TIMEOUT)
     
     if not DEBUG:
         print ('Response recieved')
