@@ -23,8 +23,9 @@ Now finished but not perfect, personal project, etc.
 - The order of the values not matter because of the JSON format. Be careful to match the parameter names to what I am using (the API expects them) and make sure to have the correct braces, commas, and double-quotes.
     
 #Dependancies
-- Python 3
+- A Python 3 interpreter
 - The Python 3 netifaces library (look for a package for your distribution or use Python's easy_install).
+- Netifaces is licensed under the MIT license: https://pypi.python.org/pypi/netifaces
 
 #Script Operation
 - Check if the VPN is connected (the interface is active).

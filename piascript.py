@@ -39,8 +39,8 @@ __host__ = 'https://github.com/Favorablestream'
 __copyright__ = 'Copyright 2016 Kieran Gillibrand'
 __credits__ = ['Duncan Gillibrand']
 __license__ = 'MIT License (LICENSE.txt)'
-__version__ = '1.0.2'
-__date__ = '14/08/2016'
+__version__ = '1.0.3'
+__date__ = '23/08/2016'
 __maintainer__ = 'Kieran Gillibrand'
 __email__ = 'Kieran.Gillibrand6@gmail.com'
 __status__ = 'Personal Project (released)'
@@ -53,6 +53,7 @@ from argparse import ArgumentParser
 
 import urllib.request
 import urllib.parse
+from urllib.error import URLError, HTTPError
 
 import json
 
@@ -86,7 +87,28 @@ def getIPAddress (interface: str) -> str:
         interface (String): The name of the interface to get the IP for
     '''
 
-    ip = netifaces.ifaddresses (interface) [AF_INET] [0] ['addr']
+    EXPECTED_ADDRESSES = 1
+    '''Number of addresses expected for the interface'''
+    
+    #Confusing netorking stuff that I sort of understand. See: https://pypi.python.org/pypi/netifaces
+    addressFamilies = netifaces.ifaddresses (interface) #All address families for the interface
+    addressList = addressFamilies [AF_INET] #List of addresses for the IPV4 family
+    
+    addresses = len (addressList)
+
+    #Exit if we get more than one IPV4 address for the family
+    if addresses > EXPECTED_ADDRESSES:
+        print ('Receieved %s IPV4 addresses for your VPN interface: \'%s\', expected: %s' %(addresses, interface, EXPECTED_ADDRESSES))
+        print ()
+        print ('Addresses:')
+        
+        for address in addressList:
+            print ('%s' %address)
+            
+        sys.exit (1)
+        
+    address = addressList [0] #First address in the list (at this point we should only have one)
+    ip = address ['addr'] #The address itself (peer and netmask are also returned)
 
     if DEBUG:
         print ('Local IP for VPN interface \'%s\': %s' %(interface, ip))
@@ -147,17 +169,23 @@ def forwardPort (credentials: dict, endpointURL: str, encoding: str, timeout: in
 
     parameters = urllib.parse.urlencode (credentials)
     
-    with urllib.request.urlopen (endpointURL, str.encode (parameters), timeout) as connection:
-        response = connection.read ()
+    try:
+        with urllib.request.urlopen (endpointURL, str.encode (parameters), timeout) as connection:
+            response = connection.read ()
         
-        responseString = response.decode (encoding)
+    except (URLError, HTTPError) as urlError:
+        print ('Error posting to endpoint: %s' %endpointURL)
+        print ()
+        print (str (urlError))
+        
+    responseString = response.decode (encoding)
 
-        if DEBUG:
-            print ('Decoded API response as: \'%s\'' %encoding)
-            print ('API response JSON: \'%s\'' %responseString)
-            print ()
+    if DEBUG:
+        print ('Decoded API response as: \'%s\'' %encoding)
+        print ('API response JSON: \'%s\'' %responseString)
+        print ()
 
-        return json.loads (responseString)
+    return json.loads (responseString)
 
 def main ():
     '''Main method that takes command line arguments'''
