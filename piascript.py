@@ -47,13 +47,12 @@ __status__ = 'Personal Project (released)'
 
 #Imports
 import netifaces
-from netifaces import AF_INET
 
-from argparse import ArgumentParser
+import argparse
 
 import urllib.request
 import urllib.parse
-from urllib.error import URLError, HTTPError
+import urllib.error
 
 import json
 
@@ -92,7 +91,7 @@ def getIPAddress (interface: str) -> str:
     
     #Confusing netorking stuff that I sort of understand. See: https://pypi.python.org/pypi/netifaces
     addressFamilies = netifaces.ifaddresses (interface) #All address families for the interface
-    addressList = addressFamilies [AF_INET] #List of addresses for the IPV4 family
+    addressList = addressFamilies [netifaces.AF_INET] #List of addresses for the IPV4 family
     
     addresses = len (addressList)
 
@@ -117,42 +116,44 @@ def getIPAddress (interface: str) -> str:
     return ip
 
 def getCredentials (credentialsPath: str, interface: str) -> dict:
-        '''
-            Retrieves PIA API credentials (Dictionary)
+    '''
+        Retrieves PIA API credentials (Dictionary)
             
-            credentialsPath (String): The path to the credentials JSON file
-            interface (String): The VPN interface to get the local IP from
-        '''
+        credentialsPath (String): The path to the credentials JSON file
+        interface (String): The VPN interface to get the local IP from
+    '''
         
-        try:
-            with open (credentialsPath) as credentialsFile:
-                credentials = json.loads (credentialsFile.read ())
-                
-                credentials ['local_ip'] = getIPAddress (interface) #Add local VPN IP
-                
-                if DEBUG:
-                    print ('Using credentials file: \'%s\'' %credentialsPath)
-                    print ()
-                    print ('Username: \'%s\'' %credentials ['user'])
-                    print ('Password: \'%s\'' %credentials ['pass'])
-                    print ('Client ID: \'%s\'' %credentials ['client_id'])
-                    print ()
+    try:
+        with open (credentialsPath) as credentialsFile:
+            if DEBUG:
+                print ('Using credentials file: \'%s\'' %credentialsPath)
+                print ()
+                    
+            credentials = json.loads (credentialsFile.read ())
 
-                return credentials
-
-        except (IOError, OSError) as fileError:
-            print ('Credentials file: \'%s\' does not exist or cannot be opened' %credentialsPath)
-            print ()
-            print (str (fileError))
+    except (IOError, OSError) as fileError:
+        print ('Credentials file: \'%s\' does not exist or cannot be opened' %credentialsPath)
+        print ()
+        print (str (fileError))
                 
-            sys.exit (1)
+        sys.exit (1)
         
-        except (ValueError) as jsonError:
-            print ('JSON file: \'%s\' is malformed, refer to the README for the correct format' %credentialsPath)
-            print ()
-            print (str (jsonError))
+    except (ValueError) as jsonError:
+        print ('JSON file: \'%s\' is malformed, refer to the README for the correct format' %credentialsPath)
+        print ()
+        print (str (jsonError))
             
-            sys.exit (1)
+        sys.exit (1)
+            
+    credentials ['local_ip'] = getIPAddress (interface) #Add local VPN IP
+    
+    if DEBUG:
+        print ('Username: \'%s\'' %credentials ['user'])
+        print ('Password: \'%s\'' %credentials ['pass'])
+        print ('Client ID: \'%s\'' %credentials ['client_id'])
+        print ()
+    
+    return credentials
                         
 def forwardPort (credentials: dict, endpointURL: str, encoding: str, timeout: int) -> dict:
     '''
@@ -173,7 +174,7 @@ def forwardPort (credentials: dict, endpointURL: str, encoding: str, timeout: in
         with urllib.request.urlopen (endpointURL, str.encode (parameters), timeout) as connection:
             response = connection.read ()
         
-    except (URLError, HTTPError) as urlError:
+    except (urllib.error.URLError, urllib.error.HTTPError) as urlError:
         print ('Error posting to endpoint: %s' %endpointURL)
         print ()
         print (str (urlError))
@@ -200,7 +201,7 @@ def main ():
     ENCODING = 'utf-8'
     '''Text encoding to use for decoding API response'''
     
-    TIMEOUT = 6
+    TIMEOUT = 5
     '''Timeout in seconds when connecting to the API endpoint'''
 
     print ()
@@ -209,7 +210,7 @@ def main ():
     print ('%s' %__host__)
     print ()
     
-    parser = ArgumentParser (description = 'Enables port forwarding for a Private Internet Access VPN and displays the forwarded port')
+    parser = argparse.ArgumentParser (description = 'Enables port forwarding for a Private Internet Access VPN and displays the forwarded port')
     parser.add_argument ('-debug', '--debug', help = 'Display debugging print statements', action = 'store_true')
     parser.add_argument ('credentialsfile', help = 'The PIA API JSON credentials file, see README.md for details')
     args = parser.parse_args ()
