@@ -87,8 +87,8 @@ def getIPAddress (interface: str) -> str:
         interface (String): The name of the interface to get the IP for
     '''
 
-    EXPECTED_ADDRESSES = 1
-    '''Number of addresses expected for the interface'''
+    ADDRESS_LIMIT = 1
+    '''Number of IPV4 addresses expected for the interface. Having more than 1 IP for the VPN is not expected'''
     
     #Confusing netorking stuff that I sort of understand. See: https://pypi.python.org/pypi/netifaces
     addressFamilies = netifaces.ifaddresses (interface) #All address families for the interface
@@ -97,7 +97,7 @@ def getIPAddress (interface: str) -> str:
     addresses = len (addressList)
 
     #Exit if we get more than one IPV4 address for the family
-    if addresses > EXPECTED_ADDRESSES:
+    if addresses > ADDRESS_LIMIT:
         print ('Receieved %s IPV4 addresses for your VPN interface: \'%s\', expected: %s' %(addresses, interface, EXPECTED_ADDRESSES))
         print ()
         print ('Addresses:')
