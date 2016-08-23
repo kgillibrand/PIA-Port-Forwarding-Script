@@ -186,7 +186,7 @@ def forwardPort (credentials: dict, endpointURL: str, encoding: str, timeout: in
     nonHTTPResponse = urllib.parse.unquote (responseString)
     
     if DEBUG:
-        print ('Decoded API response as: \'%s\'' %encoding)
+        print ('Decoded API response bytes as: \'%s\'' %encoding)
         print ('API response JSON: \'%s\'' %responseString)
         print ()
 
