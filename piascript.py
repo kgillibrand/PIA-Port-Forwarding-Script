@@ -60,12 +60,12 @@ import sys
 
 #Global Constants
 DEBUG = False
-'''Flag for debugging statements (set by -debug/--debug command line option)'''
+'''Flag for debugging print statements (set by -debug/--debug command line option)'''
 
 #Code
 def isConnected (interface: str) -> bool:
     '''
-        Checks if the client is connected to a PIA VPN (Boolean)
+        Checks if the VPN is connected (Boolean)
         
         interface (String): The name of the interface to check
     '''
@@ -81,7 +81,7 @@ def isConnected (interface: str) -> bool:
 
 def getIPAddress (interface: str) -> str:
     '''
-        Returns the IP address (String)
+        Returns the IPV4 address of the interface (String)
         
         interface (String): The name of the interface to get the IP for
     '''
@@ -89,7 +89,7 @@ def getIPAddress (interface: str) -> str:
     ADDRESS_LIMIT = 1
     '''Number of IPV4 addresses expected for the interface. Having more than 1 IP for the VPN is not expected'''
     
-    #Confusing netorking stuff that I sort of understand. See: https://pypi.python.org/pypi/netifaces
+    #Confusing networking stuff that I sort of understand. See: https://pypi.python.org/pypi/netifaces
     addressFamilies = netifaces.ifaddresses (interface) #All address families for the interface
     addressList = addressFamilies [netifaces.AF_INET] #List of addresses for the IPV4 family
     
@@ -117,7 +117,7 @@ def getIPAddress (interface: str) -> str:
 
 def getCredentials (credentialsPath: str, interface: str) -> dict:
     '''
-        Retrieves PIA API credentials (Dictionary)
+        Retrieves PIA API credentials from a file and loads them into a JSON Dictionary (Dictionary)
             
         credentialsPath (String): The path to the credentials JSON file
         interface (String): The VPN interface to get the local IP from
@@ -160,8 +160,8 @@ def forwardPort (credentials: dict, endpointURL: str, encoding: str, timeout: in
         Contacts the PIA API to enable port forwarding and returns the API response (Dictionary)
 
         credentials (Dictionary): The credentials extracted from a JSON file by getPIACredentials ()
-        url (String): The endpoint URL
-        encoding (String): The text encoding to decode the API response into
+        url (String): The endpoint URL to post to
+        encoding (String): The text encoding to decode the API response bytes into
     '''
 
     if DEBUG:
@@ -170,8 +170,10 @@ def forwardPort (credentials: dict, endpointURL: str, encoding: str, timeout: in
 
     parameters = urllib.parse.urlencode (credentials)
     
+    parametersBytes = str.encode (parameters)
+    
     try:
-        with urllib.request.urlopen (endpointURL, str.encode (parameters), timeout) as connection:
+        with urllib.request.urlopen (url = endpointURL, data = parametersBytes, timeout = timeout) as connection:
             response = connection.read ()
         
     except (urllib.error.URLError, urllib.error.HTTPError) as urlError:
@@ -181,12 +183,14 @@ def forwardPort (credentials: dict, endpointURL: str, encoding: str, timeout: in
         
     responseString = response.decode (encoding)
 
+    nonHTTPResponse = urllib.parse.unquote (responseString)
+    
     if DEBUG:
         print ('Decoded API response as: \'%s\'' %encoding)
         print ('API response JSON: \'%s\'' %responseString)
         print ()
 
-    return json.loads (responseString)
+    return json.loads (nonHTTPResponse)
 
 def main ():
     '''Main method that takes command line arguments'''
@@ -210,7 +214,7 @@ def main ():
     print ('%s' %__host__)
     print ()
     
-    parser = argparse.ArgumentParser (description = 'Enables port forwarding for a Private Internet Access VPN and displays the forwarded port')
+    parser = argparse.ArgumentParser (description = 'PIA Port Forwarding Script: A small script which enables port forwarding for a Private Internet Access VPN and displays the forwarded port.')
     parser.add_argument ('-debug', '--debug', help = 'Display debugging print statements', action = 'store_true')
     parser.add_argument ('credentialsfile', help = 'The PIA API JSON credentials file, see README.md for details')
     args = parser.parse_args ()
@@ -228,9 +232,9 @@ def main ():
         
         sys.exit (1)
 
-    credentials = getCredentials (args.credentialsfile, INTERFACE)
+    credentials = getCredentials (credentialsPath = args.credentialsfile, interface = INTERFACE)
     
-    response = forwardPort (credentials, ENDPOINT, ENCODING, TIMEOUT)
+    response = forwardPort (credentials = credentials, endpointURL = ENDPOINT, encoding = ENCODING, timeout = TIMEOUT)
     
     if not DEBUG:
         print ('Response recieved')
@@ -239,6 +243,7 @@ def main ():
     #Standard response
     if 'port' in response:
         print ('Forwarded port: %s' %response ['port'])
+        print ()
 
     #Error response
     elif 'error' in response:
@@ -254,8 +259,6 @@ def main ():
             print ('%s: %s' %(key, value))
 
         sys.exit (1)
-
-    print ()
 
     print ('Make sure to allow this port in your firewall and configure your applications to use it.')
     print ('Have a nice day :)')
