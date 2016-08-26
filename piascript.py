@@ -39,8 +39,8 @@ __host__ = 'https://github.com/Favorablestream'
 __copyright__ = 'Copyright 2016 Kieran Gillibrand'
 __credits__ = ['Duncan Gillibrand']
 __license__ = 'MIT License (LICENSE.txt)'
-__version__ = '1.0.4'
-__date__ = '23/08/2016'
+__version__ = '1.0.5'
+__date__ = '26/08/2016'
 __maintainer__ = 'Kieran Gillibrand'
 __email__ = 'Kieran.Gillibrand6@gmail.com'
 __status__ = 'Personal Project (released)'
@@ -70,12 +70,17 @@ def isConnected (interface: str) -> bool:
         interface (String): The name of the interface to check
     '''
 
-    connected = interface in netifaces.interfaces ()
+    exists = interface in netifaces.interfaces () #Check if the interface exists
+    
+    #Check if IPV4 is contained in the address families for the interface (if it has at least one IPV4 address and therefore is up)
+    addressFamilies = netifaces.ifaddresses (interface)
+    up = netifaces.AF_INET in addressFamilies
 
-    if DEBUG:
-        if connected:
-            print ('Interface: \'%s\' is connected' %interface)
-            print ()
+    connected = exists and up
+    
+    if DEBUG and connected:
+        print ('Interface: \'%s\' is connected' %interface)
+        print ()
 
     return connected
 
@@ -89,7 +94,7 @@ def getIPAddress (interface: str) -> str:
     ADDRESS_LIMIT = 1
     '''Number of IPV4 addresses expected for the interface. Having more than 1 IP for the VPN is not expected'''
     
-    #Confusing networking stuff that I sort of understand. See: https://pypi.python.org/pypi/netifaces
+    #Confusing networking stuff that I sort of understand. See: https://pypi.python.org/pypi/netifaces or https://alastairs-place.net/projects/netifaces/
     addressFamilies = netifaces.ifaddresses (interface) #All address families for the interface
     addressList = addressFamilies [netifaces.AF_INET] #List of addresses for the IPV4 family
     
@@ -139,7 +144,7 @@ def getCredentials (credentialsPath: str, interface: str) -> dict:
         sys.exit (1)
         
     except (ValueError) as jsonError:
-        print ('JSON file: \'%s\' is malformed, refer to the README for the correct format' %credentialsPath)
+        print ('JSON file: \'%s\' is malformed, refer to the README or the exception message below for the correct format' %credentialsPath)
         print ()
         print (str (jsonError))
             
@@ -157,11 +162,12 @@ def getCredentials (credentialsPath: str, interface: str) -> dict:
                         
 def forwardPort (credentials: dict, endpointURL: str, encoding: str, timeout: int) -> dict:
     '''
-        Contacts the PIA API to enable port forwarding and returns the API response (Dictionary)
+        Contacts the PIA API to enable port forwarding and returns the parsed API response (Dictionary)
 
         credentials (Dictionary): The credentials extracted from a JSON file by getPIACredentials ()
         url (String): The endpoint URL to post to
         encoding (String): The text encoding to decode the API response bytes into
+        timeout (integer): The number of seconds before the API connection times out
     '''
 
     if DEBUG:
@@ -183,14 +189,24 @@ def forwardPort (credentials: dict, endpointURL: str, encoding: str, timeout: in
         
     responseString = response.decode (encoding)
 
-    nonHTTPResponse = urllib.parse.unquote (responseString)
-    
+    nonHTTPResponse = urllib.parse.unquote (responseString) #Remove URL encoding, doesn't matter for the responses from this API in my experience
+
     if DEBUG:
         print ('Decoded API response bytes as: \'%s\'' %encoding)
-        print ('API response JSON: \'%s\'' %responseString)
+        print ('API response JSON: \'%s\'' %nonHTTPResponse)
         print ()
 
-    return json.loads (nonHTTPResponse)
+    try:
+        return json.loads (nonHTTPResponse)
+    
+    except (ValueError) as jsonError:
+        print ('The API response is malformed, refer to the response text and the exception message below')
+        print ()
+        print ('Response text: %s' %nonHTTPResponse)
+        print ()
+        print (str (jsonError))
+        
+        sys.exit (1)
 
 def main ():
     '''Main method that takes command line arguments'''
@@ -205,7 +221,7 @@ def main ():
     ENCODING = 'utf-8'
     '''Text encoding to use for decoding API response'''
     
-    TIMEOUT = 5
+    TIMEOUT = 10
     '''Timeout in seconds when connecting to the API endpoint'''
 
     print ()
@@ -229,6 +245,7 @@ def main ():
 
     if not isConnected (INTERFACE):
         print ('VPN interface: \'%s\' is not connected, please connect it first' %INTERFACE)
+        print ('Be sure the INTERFACE variable is correctly set if your VPN is actually connected')
         
         sys.exit (1)
 

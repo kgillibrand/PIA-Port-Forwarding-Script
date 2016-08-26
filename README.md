@@ -59,6 +59,19 @@ Now finished but not perfect, personal project, etc.
 
 6. Add an exception in your firewall for the port and update the port settings for applications that you are using
 
+#Constants (that you may want to change)
+Global
+- DEBUG: Flag that enables debugging print statements, set by the -debug/--debug option so you shouldn't need to edit it. Default: False
+
+GetIPAddress Method
+- ADDRESS_LIMIT: The number of IPV4 addresses expected for the VPN interface, default: 1 
+
+Main Method
+- ENDPOINT: The API endpoint URL, default: https://www.privateinternetaccess.com/vpninfo/port_forward_assignment
+- INTERFACE: The network interface that the VPN uses, default: tun0
+- ENCODING: The text encoding to use when the API response is returned in bytes, default: utf-8
+- TIMEOUT: The timeout in seconds when calling the API, default: 10
+
 #License
 MIT License
 
