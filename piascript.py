@@ -39,8 +39,8 @@ __host__ = 'https://github.com/Favorablestream'
 __copyright__ = 'Copyright 2016 Kieran Gillibrand'
 __credits__ = ['Duncan Gillibrand']
 __license__ = 'MIT License (LICENSE.txt)'
-__version__ = '1.0.5'
-__date__ = '26/08/2016'
+__version__ = '1.0.6'
+__date__ = '3/09/2016'
 __maintainer__ = 'Kieran Gillibrand'
 __email__ = 'Kieran.Gillibrand6@gmail.com'
 __status__ = 'Personal Project (released)'
@@ -63,32 +63,85 @@ DEBUG = False
 '''Flag for debugging print statements (set by -debug/--debug command line option)'''
 
 #Code
+def concatStringToList (message: str, elements: list) -> str:
+    '''
+        Concatenate a message string to a list of elements (str)
+        
+        Usually used to form an error message to pass to handleError when a list of addresses, elemts, etc is involved.
+        Example borrowed from: https://waymoot.org/home/python_string/
+        
+        message (str): The message before the elements are concatonated to it
+        elements (list): The list of elements to concatenate to the message
+    '''
+        
+    stringElements = []
+    
+    for element in elements:
+        stringElements.append (str (element))
+        
+    return message + ('\n'.join (stringElements)) #Join all elements delimited by a newline to the message and return
+    
+def handleError (message: str, exitCode: int, exception: Exception = None):
+    '''
+        Prints an error message, exception message (if provided), and exits with the given exit code
+        
+        message (str): The error message to print
+        exception (Exception) (optional): The exception used to print the provided esception message
+        exitCode (int): The code to exit with
+        
+        Script Exit Codes
+        - 0: main (): Success, normal exit
+        - 1: main (): VPN is not connected
+        - 2: getCredentials (): Credentials file cannot be opened
+        - 3: getCredentials (): JSON credentials are malformed
+        - 4: getIPAddress (): Found more addresses than expected
+        - 5: forwardPort (): Error posting to API endpoint
+        - 6: forwardPort (): API JSON response is malformed
+        - 7: main (): API returned an error response
+        - 8: main (): API returned an unknown response
+    '''
+    
+    exitCodes = ['main (): Success, normal exit', 'main (): VPN is not connected', 'getCredentials (): Credentials file cannot be opened', 'getCredentials (): JSON credentials are malformed', 'getIPAddress (): Found more addresses than expected', 'forwardPort (): Error posting to API endpoint', 'forwardPort (): API JSON response is malformed', 'main (): API returned an error response', 'main (): API returned an unknown response']
+    
+    print (message)
+    print ()
+    
+    if exception != None:
+        print (str (exception))
+        print ()
+        
+    print ('Exiting with exit status: %s, %s' %(exitCode, exitCodes [exitCode]))
+    
+    sys.exit (exitCode)
+    
 def isConnected (interface: str) -> bool:
     '''
         Checks if the VPN is connected (Boolean)
         
-        interface (String): The name of the interface to check
+        interface (str): The name of the interface to check
     '''
 
     exists = interface in netifaces.interfaces () #Check if the interface exists
     
+    #We cannot be connected if the interface does not exist
+    if not exists:
+        return exists
+        
     #Check if IPV4 is contained in the address families for the interface (if it has at least one IPV4 address and therefore is up)
     addressFamilies = netifaces.ifaddresses (interface)
     up = netifaces.AF_INET in addressFamilies
-
-    connected = exists and up
     
-    if DEBUG and connected:
+    if DEBUG and up:
         print ('Interface: \'%s\' is connected' %interface)
         print ()
 
-    return connected
+    return up
 
 def getIPAddress (interface: str) -> str:
     '''
-        Returns the IPV4 address of the interface (String)
+        Returns the IPV4 address of the interface (str)
         
-        interface (String): The name of the interface to get the IP for
+        interface (str): The name of the interface to get the IP for
     '''
 
     ADDRESS_LIMIT = 1
@@ -102,14 +155,9 @@ def getIPAddress (interface: str) -> str:
 
     #Exit if we get more than one IPV4 address for the family
     if addresses > ADDRESS_LIMIT:
-        print ('Receieved %s IPV4 addresses for your VPN interface: \'%s\', expected: %s' %(addresses, interface, EXPECTED_ADDRESSES))
-        print ()
-        print ('Addresses:')
-        
-        for address in addressList:
-            print ('%s' %address)
-            
-        sys.exit (1)
+        message = concatStringToList ('Receieved %s IPV4 address(es) for your VPN interface: \'%s\', expected: %s\nAddresses:\n\n' %(addresses, interface, ADDRESS_LIMIT), addressList)
+                
+        handleError (message = message, exitCode = 4)
         
     address = addressList [0] #First address in the list (at this point we should only have one)
     ip = address ['addr'] #The address itself (peer and netmask are also returned)
@@ -124,8 +172,8 @@ def getCredentials (credentialsPath: str, interface: str) -> dict:
     '''
         Retrieves PIA API credentials from a file and loads them into a JSON Dictionary (Dictionary)
             
-        credentialsPath (String): The path to the credentials JSON file
-        interface (String): The VPN interface to get the local IP from
+        credentialsPath (str): The path to the credentials JSON file
+        interface (str): The VPN interface to get the local IP from
     '''
         
     try:
@@ -137,18 +185,10 @@ def getCredentials (credentialsPath: str, interface: str) -> dict:
             credentials = json.loads (credentialsFile.read ())
 
     except (IOError, OSError) as fileError:
-        print ('Credentials file: \'%s\' does not exist or cannot be opened' %credentialsPath)
-        print ()
-        print (str (fileError))
-                
-        sys.exit (1)
+        handleError (message = 'Credentials file: \'%s\' does not exist or cannot be opened' %credentialsPath, exception = fileError, exitCode = 2)
         
     except (ValueError) as jsonError:
-        print ('JSON file: \'%s\' is malformed, refer to the README or the exception message below for the correct format' %credentialsPath)
-        print ()
-        print (str (jsonError))
-            
-        sys.exit (1)
+        handleError (message = 'JSON file: \'%s\' is malformed, refer to the README or the exception message below for the correct format' %credentialsPath, exception = jsonError, exitCode = 3)
             
     credentials ['local_ip'] = getIPAddress (interface) #Add local VPN IP
     
@@ -165,9 +205,9 @@ def forwardPort (credentials: dict, endpointURL: str, encoding: str, timeout: in
         Contacts the PIA API to enable port forwarding and returns the parsed API response (Dictionary)
 
         credentials (Dictionary): The credentials extracted from a JSON file by getPIACredentials ()
-        url (String): The endpoint URL to post to
-        encoding (String): The text encoding to decode the API response bytes into
-        timeout (integer): The number of seconds before the API connection times out
+        url (str): The endpoint URL to post to
+        encoding (str): The text encoding to decode the API response bytes into
+        timeout (int): The number of seconds before the API connection times out
     '''
 
     if DEBUG:
@@ -183,9 +223,7 @@ def forwardPort (credentials: dict, endpointURL: str, encoding: str, timeout: in
             response = connection.read ()
         
     except (urllib.error.URLError, urllib.error.HTTPError) as urlError:
-        print ('Error posting to endpoint: %s' %endpointURL)
-        print ()
-        print (str (urlError))
+        handleError (message = 'Error posting to endpoint URL: %s' %endpointURL, exception = urlError, exitCode = 5)
         
     responseString = response.decode (encoding)
 
@@ -200,13 +238,7 @@ def forwardPort (credentials: dict, endpointURL: str, encoding: str, timeout: in
         return json.loads (nonHTTPResponse)
     
     except (ValueError) as jsonError:
-        print ('The API response is malformed, refer to the response text and the exception message below')
-        print ()
-        print ('Response text: %s' %nonHTTPResponse)
-        print ()
-        print (str (jsonError))
-        
-        sys.exit (1)
+        handleError (message = 'The API response is malformed, refer to the response text and the exception message below\n\nResponse text: %s' %nonHTTPResponse, exception = jsonError, exitCode = 6)
 
 def main ():
     '''Main method that takes command line arguments'''
@@ -244,15 +276,12 @@ def main ():
         print ()
 
     if not isConnected (INTERFACE):
-        print ('VPN interface: \'%s\' is not connected, please connect it first' %INTERFACE)
-        print ('Be sure the INTERFACE variable is correctly set if your VPN is actually connected')
-        
-        sys.exit (1)
+        handleError (message = 'VPN interface: \'%s\' is not connected, please connect it first\nBe sure the INTERFACE variable is correctly set if your VPN is actually connected' %INTERFACE, exitCode = 1)
 
     credentials = getCredentials (credentialsPath = args.credentialsfile, interface = INTERFACE)
     
     response = forwardPort (credentials = credentials, endpointURL = ENDPOINT, encoding = ENCODING, timeout = TIMEOUT)
-    
+
     if not DEBUG:
         print ('Response recieved')
         print ()
@@ -264,18 +293,18 @@ def main ():
 
     #Error response
     elif 'error' in response:
-        print ('API returned an error: %s' %response ['error'])
+        handleError (message = 'API returned an error: %s' %response ['error'], exitCode = 7)
         
-        sys.exit (1)
-
     #Unknown key
     else:
-        print ('API returned unknown key/value pair(s):')
+        keyValues = []
         
         for key, value in response.items ():
-            print ('%s: %s' %(key, value))
+            keyValues.append ('%s: %s' %(str (key), str (value)))
+            
+        message = concatStringToList ('API returned unknown key/value pair(s):\n\n', keyValues)
 
-        sys.exit (1)
+        handleError (message = message, exitCode = 8)
 
     print ('Make sure to allow this port in your firewall and configure your applications to use it.')
     print ('Have a nice day :)')
