@@ -39,7 +39,7 @@ __host__ = 'https://github.com/Favorablestream'
 __copyright__ = 'Copyright 2016 Kieran Gillibrand'
 __credits__ = ['Duncan Gillibrand']
 __license__ = 'MIT License (LICENSE.txt)'
-__version__ = '1.0.6'
+__version__ = '1.1.0'
 __date__ = '3/09/2016'
 __maintainer__ = 'Kieran Gillibrand'
 __email__ = 'Kieran.Gillibrand6@gmail.com'
@@ -68,7 +68,6 @@ def concatStringToList (message: str, elements: list) -> str:
         Concatenate a message string to a list of elements (str)
         
         Usually used to form an error message to pass to handleError when a list of addresses, elemts, etc is involved.
-        Example borrowed from: https://waymoot.org/home/python_string/
         
         message (str): The message before the elements are concatonated to it
         elements (list): The list of elements to concatenate to the message
@@ -94,14 +93,15 @@ def handleError (message: str, exitCode: int, exception: Exception = None):
         - 1: main (): VPN is not connected
         - 2: getCredentials (): Credentials file cannot be opened
         - 3: getCredentials (): JSON credentials are malformed
-        - 4: getIPAddress (): Found more addresses than expected
-        - 5: forwardPort (): Error posting to API endpoint
-        - 6: forwardPort (): API JSON response is malformed
-        - 7: main (): API returned an error response
-        - 8: main (): API returned an unknown response
+        - 4: getCredentials (): JSON credentials file is missing some required keys
+        - 5: getIPAddress (): Found more addresses than expected
+        - 6: forwardPort (): Error posting to API endpoint
+        - 7: forwardPort (): API JSON response is malformed
+        - 8: main (): API returned an error response
+        - 9: main (): API returned an unknown response
     '''
     
-    exitCodes = ['main (): Success, normal exit', 'main (): VPN is not connected', 'getCredentials (): Credentials file cannot be opened', 'getCredentials (): JSON credentials are malformed', 'getIPAddress (): Found more addresses than expected', 'forwardPort (): Error posting to API endpoint', 'forwardPort (): API JSON response is malformed', 'main (): API returned an error response', 'main (): API returned an unknown response']
+    exitCodes = ['main (): Success, normal exit', 'main (): VPN is not connected', 'getCredentials (): Credentials file cannot be opened', 'getCredentials (): JSON credentials are malformed', 'getCredentials (): Credentials file is missing required keys', 'getIPAddress (): Found more addresses than expected', 'forwardPort (): Error posting to API endpoint', 'forwardPort (): API JSON response is malformed', 'main (): API returned an error response', 'main (): API returned an unknown response']
     
     print (message)
     print ()
@@ -157,7 +157,7 @@ def getIPAddress (interface: str) -> str:
     if addresses > ADDRESS_LIMIT:
         message = concatStringToList ('Receieved %s IPV4 address(es) for your VPN interface: \'%s\', expected: %s\nAddresses:\n\n' %(addresses, interface, ADDRESS_LIMIT), addressList)
                 
-        handleError (message = message, exitCode = 4)
+        handleError (message = message, exitCode = 5)
         
     address = addressList [0] #First address in the list (at this point we should only have one)
     ip = address ['addr'] #The address itself (peer and netmask are also returned)
@@ -192,6 +192,10 @@ def getCredentials (credentialsPath: str, interface: str) -> dict:
             
     credentials ['local_ip'] = getIPAddress (interface) #Add local VPN IP
     
+    #Exit if username, password, or client ID is missing
+    if not credentials.keys () & {'user', 'pass', 'client_id'}:
+        handleError (message = 'Credentials file: %s is missing required keys. See the required format in the README' %credentialsPath, exitCode = 4)
+
     if DEBUG:
         print ('Username: \'%s\'' %credentials ['user'])
         print ('Password: \'%s\'' %credentials ['pass'])
@@ -223,7 +227,7 @@ def forwardPort (credentials: dict, endpointURL: str, encoding: str, timeout: in
             response = connection.read ()
         
     except (urllib.error.URLError, urllib.error.HTTPError) as urlError:
-        handleError (message = 'Error posting to endpoint URL: %s' %endpointURL, exception = urlError, exitCode = 5)
+        handleError (message = 'Error posting to endpoint URL: %s' %endpointURL, exception = urlError, exitCode = 6)
         
     responseString = response.decode (encoding)
 
@@ -238,7 +242,7 @@ def forwardPort (credentials: dict, endpointURL: str, encoding: str, timeout: in
         return json.loads (nonHTTPResponse)
     
     except (ValueError) as jsonError:
-        handleError (message = 'The API response is malformed, refer to the response text and the exception message below\n\nResponse text: %s' %nonHTTPResponse, exception = jsonError, exitCode = 6)
+        handleError (message = 'The API response is malformed, refer to the response text and the exception message below\n\nResponse text: %s' %nonHTTPResponse, exception = jsonError, exitCode = 7)
 
 def main ():
     '''Main method that takes command line arguments'''
@@ -293,7 +297,7 @@ def main ():
 
     #Error response
     elif 'error' in response:
-        handleError (message = 'API returned an error: %s' %response ['error'], exitCode = 7)
+        handleError (message = 'API returned an error: %s' %response ['error'], exitCode = 8)
         
     #Unknown key
     else:
@@ -304,7 +308,7 @@ def main ():
             
         message = concatStringToList ('API returned unknown key/value pair(s):\n\n', keyValues)
 
-        handleError (message = message, exitCode = 8)
+        handleError (message = message, exitCode = 9)
 
     print ('Make sure to allow this port in your firewall and configure your applications to use it.')
     print ('Have a nice day :)')
