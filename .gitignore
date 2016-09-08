@@ -1,3 +1,6 @@
+#Python binaries
 *.pyc
 *.pyo
 
+#JSON credentials file
+*.json
