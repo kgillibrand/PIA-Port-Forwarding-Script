@@ -39,8 +39,8 @@ __host__ = 'https://github.com/Favorablestream'
 __copyright__ = 'Copyright 2016 Kieran Gillibrand'
 __credits__ = ['Duncan Gillibrand']
 __license__ = 'MIT License (LICENSE.txt)'
-__version__ = '1.1.0'
-__date__ = '3/09/2016'
+__version__ = '1.2'
+__date__ = '23/12/2016'
 __maintainer__ = 'Kieran Gillibrand'
 __email__ = 'Kieran.Gillibrand6@gmail.com'
 __status__ = 'Personal Project (released)'
@@ -62,7 +62,32 @@ import sys
 DEBUG = False
 '''Flag for debugging print statements (set by -debug/--debug command line option)'''
 
+DEFAULT_ENCODING = 'utf-8'
+'''Default encoding to use for decoding the API response if the server does not give us an encoding header'''
+    
 #Code
+def debugPrint (message: str):
+    '''
+        Print a message if debugging statements are enabled
+        
+        message (str): The message to print
+    '''
+    
+    if DEBUG:
+        print (message)
+        print ()
+        
+def nonDebugPrint (message: str):
+    '''
+        Print a message if debugging statements are not enabled
+        
+        message (str): The message to print
+    '''
+    
+    if not DEBUG:
+        print (message)
+        print ()
+
 def concatStringToList (message: str, elements: list) -> str:
     '''
         Concatenate a message string to a list of elements (str)
@@ -125,15 +150,14 @@ def isConnected (interface: str) -> bool:
     
     #We cannot be connected if the interface does not exist
     if not exists:
-        return exists
+        return False
         
     #Check if IPV4 is contained in the address families for the interface (if it has at least one IPV4 address and therefore is up)
     addressFamilies = netifaces.ifaddresses (interface)
     up = netifaces.AF_INET in addressFamilies
     
-    if DEBUG and up:
-        print ('Interface: \'%s\' is connected' %interface)
-        print ()
+    if up:
+        debugPrint ('Interface: \'%s\' is connected' %interface)
 
     return up
 
@@ -155,16 +179,14 @@ def getIPAddress (interface: str) -> str:
 
     #Exit if we get more than one IPV4 address for the family
     if addresses > ADDRESS_LIMIT:
-        message = concatStringToList ('Receieved %s IPV4 address(es) for your VPN interface: \'%s\', expected: %s\nAddresses:\n\n' %(addresses, interface, ADDRESS_LIMIT), addressList)
+        message = concatStringToList ('Receieved %d IPV4 address(es) for your VPN interface: \'%s\', expected: %s\nAddresses:\n\n' %(addresses, interface, ADDRESS_LIMIT), addressList)
                 
         handleError (message = message, exitCode = 5)
         
     address = addressList [0] #First address in the list (at this point we should only have one)
     ip = address ['addr'] #The address itself (peer and netmask are also returned)
 
-    if DEBUG:
-        print ('Local IP for VPN interface \'%s\': %s' %(interface, ip))
-        print ()
+    debugPrint ('Local IP for VPN interface \'%s\': %s' %(interface, ip))
 
     return ip
 
@@ -178,9 +200,7 @@ def getCredentials (credentialsPath: str, interface: str) -> dict:
         
     try:
         with open (credentialsPath) as credentialsFile:
-            if DEBUG:
-                print ('Using credentials file: \'%s\'' %credentialsPath)
-                print ()
+            debugPrint ('Using credentials file: \'%s\'' %credentialsPath)
                     
             credentials = json.loads (credentialsFile.read ())
 
@@ -196,15 +216,13 @@ def getCredentials (credentialsPath: str, interface: str) -> dict:
     if not credentials.keys () & {'user', 'pass', 'client_id'}:
         handleError (message = 'Credentials file: %s is missing required keys. See the required format in the README' %credentialsPath, exitCode = 4)
 
-    if DEBUG:
-        print ('Username: \'%s\'' %credentials ['user'])
-        print ('Password: \'%s\'' %credentials ['pass'])
-        print ('Client ID: \'%s\'' %credentials ['client_id'])
-        print ()
+    debugPrint ('Username: \'%s\'' %credentials ['user'])
+    debugPrint ('Password: \'%s\'' %credentials ['pass'])
+    debugPrint ('Client ID: \'%s\'' %credentials ['client_id'])
     
     return credentials
                         
-def forwardPort (credentials: dict, endpointURL: str, encoding: str, timeout: int) -> dict:
+def forwardPort (credentials: dict, endpointURL: str, timeout: int) -> dict:
     '''
         Contacts the PIA API to enable port forwarding and returns the parsed API response (Dictionary)
 
@@ -214,9 +232,7 @@ def forwardPort (credentials: dict, endpointURL: str, encoding: str, timeout: in
         timeout (int): The number of seconds before the API connection times out
     '''
 
-    if DEBUG:
-        print ('Posting to endpoint: \'%s\'' % endpointURL)
-        print ()
+    debugPrint ('Posting to endpoint: \'%s\'' % endpointURL)
 
     parameters = urllib.parse.urlencode (credentials)
     
@@ -225,18 +241,21 @@ def forwardPort (credentials: dict, endpointURL: str, encoding: str, timeout: in
     try:
         with urllib.request.urlopen (url = endpointURL, data = parametersBytes, timeout = timeout) as connection:
             response = connection.read ()
+            
+            #Decode with the given encoding or with the default if none is given
+            responseEncoding = connection.headers.get_content_charset ()
+            if responseEncoding == None:
+                responseEncoding = DEFAULT_ENCODING
         
     except (urllib.error.URLError, urllib.error.HTTPError) as urlError:
         handleError (message = 'Error posting to endpoint URL: %s' %endpointURL, exception = urlError, exitCode = 6)
         
-    responseString = response.decode (encoding)
+    responseString = response.decode (responseEncoding)
 
     nonHTTPResponse = urllib.parse.unquote (responseString) #Remove URL encoding, doesn't matter for the responses from this API in my experience
 
-    if DEBUG:
-        print ('Decoded API response bytes as: \'%s\'' %encoding)
-        print ('API response JSON: \'%s\'' %nonHTTPResponse)
-        print ()
+    debugPrint ('Decoded API response bytes as: \'%s\'' %responseEncoding)
+    debugPrint ('API response JSON: \'%s\'' %nonHTTPResponse)
 
     try:
         return json.loads (nonHTTPResponse)
@@ -253,9 +272,6 @@ def main ():
 
     INTERFACE = 'tun0'
     '''Network interface for VPN'''
-
-    ENCODING = 'utf-8'
-    '''Text encoding to use for decoding API response'''
     
     TIMEOUT = 10
     '''Timeout in seconds when connecting to the API endpoint'''
@@ -275,20 +291,16 @@ def main ():
     global DEBUG
     DEBUG = args.debug
 
-    if DEBUG:
-        print ('Debugging print statements enabled')
-        print ()
+    debugPrint ('Debugging print statements enabled')
 
     if not isConnected (INTERFACE):
         handleError (message = 'VPN interface: \'%s\' is not connected, please connect it first\nBe sure the INTERFACE variable is correctly set if your VPN is actually connected' %INTERFACE, exitCode = 1)
 
     credentials = getCredentials (credentialsPath = args.credentialsfile, interface = INTERFACE)
     
-    response = forwardPort (credentials = credentials, endpointURL = ENDPOINT, encoding = ENCODING, timeout = TIMEOUT)
+    response = forwardPort (credentials = credentials, endpointURL = ENDPOINT, timeout = TIMEOUT)
 
-    if not DEBUG:
-        print ('Response recieved')
-        print ()
+    nonDebugPrint ('Response recieved')
 
     #Standard response
     if 'port' in response:
