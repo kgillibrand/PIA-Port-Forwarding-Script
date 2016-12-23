@@ -66,26 +66,42 @@ DEFAULT_ENCODING = 'utf-8'
 '''Default encoding to use for decoding the API response if the server does not give us an encoding header'''
     
 #Code
-def debugPrint (message: str):
+def debugPrint (message: str, printNewline: bool = True):
     '''
         Print a message if debugging statements are enabled
         
         message (str): The message to print
+        printNewline (bool): Print an additional newline after the message (default True) 
     '''
     
-    if DEBUG:
-        print (message)
+    if message == None:
+        return
+        
+    if not DEBUG:
+        return
+        
+    print (message)
+    
+    if printNewline:
         print ()
         
-def nonDebugPrint (message: str):
+def nonDebugPrint (message: str, printNewline: bool = True):
     '''
         Print a message if debugging statements are not enabled
         
         message (str): The message to print
+        printNewline (bool): Print an additional newline after the message (default True)
     '''
     
-    if not DEBUG:
-        print (message)
+    if message == None:
+        return
+        
+    if DEBUG:
+        return
+        
+    print (message)
+    
+    if printNewline:
         print ()
 
 def concatStringToList (message: str, elements: list) -> str:
@@ -216,8 +232,8 @@ def getCredentials (credentialsPath: str, interface: str) -> dict:
     if not credentials.keys () & {'user', 'pass', 'client_id'}:
         handleError (message = 'Credentials file: %s is missing required keys. See the required format in the README' %credentialsPath, exitCode = 4)
 
-    debugPrint ('Username: \'%s\'' %credentials ['user'])
-    debugPrint ('Password: \'%s\'' %credentials ['pass'])
+    debugPrint ('Username: \'%s\'' %credentials ['user'], printNewline = False)
+    debugPrint ('Password: \'%s\'' %credentials ['pass'], printNewline = False)
     debugPrint ('Client ID: \'%s\'' %credentials ['client_id'])
     
     return credentials
