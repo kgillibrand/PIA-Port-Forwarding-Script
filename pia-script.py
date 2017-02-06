@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 
 #License
 '''
@@ -39,8 +39,8 @@ __host__ = 'https://github.com/Favorablestream'
 __copyright__ = 'Copyright 2016 Kieran Gillibrand'
 __credits__ = ['Duncan Gillibrand']
 __license__ = 'MIT License (LICENSE.txt)'
-__version__ = '1.2'
-__date__ = '23/12/2016'
+__version__ = '1.3'
+__date__ = '05/02/2017'
 __maintainer__ = 'Kieran Gillibrand'
 __email__ = 'Kieran.Gillibrand6@gmail.com'
 __status__ = 'Personal Project (released)'
@@ -50,6 +50,8 @@ import netifaces
 
 import argparse
 
+import hashlib
+
 import urllib.request
 import urllib.parse
 import urllib.error
@@ -57,6 +59,7 @@ import urllib.error
 import json
 
 import sys
+import os
 
 #Global Constants
 DEBUG = False
@@ -66,26 +69,22 @@ DEFAULT_ENCODING = 'utf-8'
 '''Default encoding to use for decoding the API response if the server does not give us an encoding header'''
     
 #Code
-def debugPrint (message: str, printNewline: bool = True):
+def debug_print (message: str, print_newline: bool = True):
     '''
         Print a message if debugging statements are enabled
         
         message (str): The message to print
         printNewline (bool): Print an additional newline after the message (default True) 
     '''
-    
-    if message == None:
-        return
-        
     if not DEBUG:
         return
         
     print (message)
     
-    if printNewline:
+    if print_newline:
         print ()
         
-def nonDebugPrint (message: str, printNewline: bool = True):
+def nondebug_print (message: str, print_newline: bool = True):
     '''
         Print a message if debugging statements are not enabled
         
@@ -93,56 +92,49 @@ def nonDebugPrint (message: str, printNewline: bool = True):
         printNewline (bool): Print an additional newline after the message (default True)
     '''
     
-    if message == None:
-        return
-        
     if DEBUG:
         return
-        
+    
     print (message)
     
-    if printNewline:
+    if print_newline:
         print ()
 
-def concatStringToList (message: str, elements: list) -> str:
+def append_list_to_string (message: str, elements: list) -> str:
     '''
         Concatenate a message string to a list of elements (str)
         
-        Usually used to form an error message to pass to handleError when a list of addresses, elemts, etc is involved.
+        Usually used to form an error message to pass to handle_error when a list of addresses, elemts, etc is involved.
         
         message (str): The message before the elements are concatonated to it
         elements (list): The list of elements to concatenate to the message
     '''
-        
-    stringElements = []
+             
+    string_elements = []
     
     for element in elements:
-        stringElements.append (str (element))
+        string_elements.append (str (element))
         
-    return message + ('\n'.join (stringElements)) #Join all elements delimited by a newline to the message and return
+    return message + ('\n'.join (string_elements)) #Join all elements delimited by a newline to the message and return
     
-def handleError (message: str, exitCode: int, exception: Exception = None):
+def handle_error (message: str, exit_code: int, exception: Exception = None):
     '''
         Prints an error message, exception message (if provided), and exits with the given exit code
         
         message (str): The error message to print
         exception (Exception) (optional): The exception used to print the provided esception message
-        exitCode (int): The code to exit with
+        exit_code (int): The code to exit with
         
         Script Exit Codes
         - 0: main (): Success, normal exit
         - 1: main (): VPN is not connected
-        - 2: getCredentials (): Credentials file cannot be opened
-        - 3: getCredentials (): JSON credentials are malformed
-        - 4: getCredentials (): JSON credentials file is missing some required keys
-        - 5: getIPAddress (): Found more addresses than expected
-        - 6: forwardPort (): Error posting to API endpoint
-        - 7: forwardPort (): API JSON response is malformed
-        - 8: main (): API returned an error response
-        - 9: main (): API returned an unknown response
+        - 2: call_port_api (): Error with get request to API endpoint
+        - 3: call_port_api (): API JSON response is malformed
+        - 4: main (): API returned an error response
+        - 5: main (): API returned an unknown response
     '''
     
-    exitCodes = ['main (): Success, normal exit', 'main (): VPN is not connected', 'getCredentials (): Credentials file cannot be opened', 'getCredentials (): JSON credentials are malformed', 'getCredentials (): Credentials file is missing required keys', 'getIPAddress (): Found more addresses than expected', 'forwardPort (): Error posting to API endpoint', 'forwardPort (): API JSON response is malformed', 'main (): API returned an error response', 'main (): API returned an unknown response']
+    exit_codes = ['main (): Success, normal exit', 'main (): VPN is not connected', 'call_port_api (): Error sending get request to API endpoint', 'call_port_api (): API JSON response is malformed', 'main (): API returned an error response', 'main (): API returned an unknown response']
     
     print (message)
     print ()
@@ -151,17 +143,17 @@ def handleError (message: str, exitCode: int, exception: Exception = None):
         print (str (exception))
         print ()
         
-    print ('Exiting with exit status: %s, %s' %(exitCode, exitCodes [exitCode]))
+    print ('Exiting with exit status: %s, %s' %(exit_code, exit_codes [exit_code]))
     
-    sys.exit (exitCode)
+    sys.exit (exit_code)
     
-def isConnected (interface: str) -> bool:
+def is_interface_connected (interface: str) -> bool:
     '''
         Checks if the VPN is connected (Boolean)
         
         interface (str): The name of the interface to check
     '''
-
+        
     exists = interface in netifaces.interfaces () #Check if the interface exists
     
     #We cannot be connected if the interface does not exist
@@ -169,93 +161,50 @@ def isConnected (interface: str) -> bool:
         return False
         
     #Check if IPV4 is contained in the address families for the interface (if it has at least one IPV4 address and therefore is up)
-    addressFamilies = netifaces.ifaddresses (interface)
-    up = netifaces.AF_INET in addressFamilies
+    address_families = netifaces.ifaddresses (interface)
+    up = netifaces.AF_INET in address_families
     
     if up:
-        debugPrint ('Interface: \'%s\' is connected' %interface)
+        debug_print ('Interface: \'%s\' is connected' %interface)
 
     return up
 
-def getIPAddress (interface: str) -> str:
+def generate_client_id (random_bytes_length) -> str:
     '''
-        Returns the IPV4 address of the interface (str)
+        Generates a secure random client id to be used with the port forwarding API (str)
         
-        interface (str): The name of the interface to get the IP for
+        random_bytes_length (int): The number of bytes to read before generating the client id
     '''
-
-    ADDRESS_LIMIT = 1
-    '''Number of IPV4 addresses expected for the interface. Having more than 1 IP for the VPN is not expected'''
     
-    #Confusing networking stuff that I sort of understand. See: https://pypi.python.org/pypi/netifaces or https://alastairs-place.net/projects/netifaces/
-    addressFamilies = netifaces.ifaddresses (interface) #All address families for the interface
-    addressList = addressFamilies [netifaces.AF_INET] #List of addresses for the IPV4 family
+    random_byte_string = os.urandom (random_bytes_length)
     
-    addresses = len (addressList)
-
-    #Exit if we get more than one IPV4 address for the family
-    if addresses > ADDRESS_LIMIT:
-        message = concatStringToList ('Receieved %d IPV4 address(es) for your VPN interface: \'%s\', expected: %s\nAddresses:\n\n' %(addresses, interface, ADDRESS_LIMIT), addressList)
-                
-        handleError (message = message, exitCode = 5)
-        
-    address = addressList [0] #First address in the list (at this point we should only have one)
-    ip = address ['addr'] #The address itself (peer and netmask are also returned)
-
-    debugPrint ('Local IP for VPN interface \'%s\': %s' %(interface, ip))
-
-    return ip
-
-def getCredentials (credentialsPath: str, interface: str) -> dict:
-    '''
-        Retrieves PIA API credentials from a file and loads them into a JSON Dictionary (Dictionary)
-            
-        credentialsPath (str): The path to the credentials JSON file
-        interface (str): The VPN interface to get the local IP from
-    '''
-        
-    try:
-        with open (credentialsPath) as credentialsFile:
-            debugPrint ('Using credentials file: \'%s\'' %credentialsPath)
-                    
-            credentials = json.loads (credentialsFile.read ())
-
-    except (IOError, OSError) as fileError:
-        handleError (message = 'Credentials file: \'%s\' does not exist or cannot be opened' %credentialsPath, exception = fileError, exitCode = 2)
-        
-    except (ValueError) as jsonError:
-        handleError (message = 'JSON file: \'%s\' is malformed, refer to the README or the exception message below for the correct format' %credentialsPath, exception = jsonError, exitCode = 3)
-            
-    credentials ['local_ip'] = getIPAddress (interface) #Add local VPN IP
+    hash_generator = hashlib.sha256 ()
+    hash_generator.update (random_byte_string)
+    hash_string = hash_generator.hexdigest ()
     
-    #Exit if username, password, or client ID is missing
-    if not credentials.keys () & {'user', 'pass', 'client_id'}:
-        handleError (message = 'Credentials file: %s is missing required keys. See the required format in the README' %credentialsPath, exitCode = 4)
-
-    debugPrint ('Username: \'%s\'' %credentials ['user'], printNewline = False)
-    debugPrint ('Password: \'%s\'' %credentials ['pass'], printNewline = False)
-    debugPrint ('Client ID: \'%s\'' %credentials ['client_id'])
+    hash_string = hash_string.replace ('-', ' ')
     
-    return credentials
-                        
-def forwardPort (credentials: dict, endpointURL: str, timeout: int) -> dict:
+    debug_print ("Generated client ID: %s" %hash_string)
+    
+    return hash_string
+    
+def call_port_api (client_id: str, endpoint_url: str, timeout: int) -> dict:
     '''
         Contacts the PIA API to enable port forwarding and returns the parsed API response (Dictionary)
 
-        credentials (Dictionary): The credentials extracted from a JSON file by getPIACredentials ()
-        url (str): The endpoint URL to post to
-        encoding (str): The text encoding to decode the API response bytes into
+        client_id (str): The client id generated by generate_client_id       
+        endpoint_url (str): The endpoint URL to post to
         timeout (int): The number of seconds before the API connection times out
     '''
+        
+    debug_print ('Posting to endpoint: \'%s\'' % endpoint_url)
 
-    debugPrint ('Posting to endpoint: \'%s\'' % endpointURL)
-
-    parameters = urllib.parse.urlencode (credentials)
-    
-    parametersBytes = str.encode (parameters)
+    client_id_dict = {'client_id': client_id}
+    encoded_id = urllib.parse.urlencode (client_id_dict)
+    get_url = endpoint_url + '?' + encoded_id
     
     try:
-        with urllib.request.urlopen (url = endpointURL, data = parametersBytes, timeout = timeout) as connection:
+        with urllib.request.urlopen (url = get_url, timeout = timeout) as connection:
             response = connection.read ()
             
             #Decode with the given encoding or with the default if none is given
@@ -263,27 +212,30 @@ def forwardPort (credentials: dict, endpointURL: str, timeout: int) -> dict:
             if responseEncoding == None:
                 responseEncoding = DEFAULT_ENCODING
         
-    except (urllib.error.URLError, urllib.error.HTTPError) as urlError:
-        handleError (message = 'Error posting to endpoint URL: %s' %endpointURL, exception = urlError, exitCode = 6)
+    except (urllib.error.URLError, urllib.error.HTTPError, ConnectionResetError) as urlError:
+        handle_error (message = 'Error with get request to API endpoint with URL: %s' %get_url, exception = urlError, exit_code = 2)
         
     responseString = response.decode (responseEncoding)
 
     nonHTTPResponse = urllib.parse.unquote (responseString) #Remove URL encoding, doesn't matter for the responses from this API in my experience
 
-    debugPrint ('Decoded API response bytes as: \'%s\'' %responseEncoding)
-    debugPrint ('API response JSON: \'%s\'' %nonHTTPResponse)
+    debug_print ('Decoded API response bytes as: \'%s\'' %responseEncoding)
+    debug_print ('API response JSON: \'%s\'' %nonHTTPResponse)
 
     try:
         return json.loads (nonHTTPResponse)
     
     except (ValueError) as jsonError:
-        handleError (message = 'The API response is malformed, refer to the response text and the exception message below\n\nResponse text: %s' %nonHTTPResponse, exception = jsonError, exitCode = 7)
+        handle_error (message = 'The API response is malformed, refer to the response text and the exception message below\n\nResponse text: %s' %nonHTTPResponse, exception = jsonError, exit_code = 3)
 
 def main ():
     '''Main method that takes command line arguments'''
     
     #Local Constants
-    ENDPOINT = 'https://www.privateinternetaccess.com/vpninfo/port_forward_assignment'
+    RANDOM_BYTES_LENGTH = 3000
+    '''The number of bytes to read when generating a client id'''
+    
+    ENDPOINT = 'http://209.222.18.222:2000/'
     '''API endpoint URL'''
 
     INTERFACE = 'tun0'
@@ -300,23 +252,22 @@ def main ():
     
     parser = argparse.ArgumentParser (description = 'PIA Port Forwarding Script: A small script which enables port forwarding for a Private Internet Access VPN and displays the forwarded port.')
     parser.add_argument ('-debug', '--debug', help = 'Display debugging print statements', action = 'store_true')
-    parser.add_argument ('credentialsfile', help = 'The PIA API JSON credentials file, see README.md for details')
     args = parser.parse_args ()
 
     #Set global debug flag if -debug/--debug command line flag is used
     global DEBUG
     DEBUG = args.debug
 
-    debugPrint ('Debugging print statements enabled')
+    debug_print ('Debugging print statements enabled')
 
-    if not isConnected (INTERFACE):
-        handleError (message = 'VPN interface: \'%s\' is not connected, please connect it first\nBe sure the INTERFACE variable is correctly set if your VPN is actually connected' %INTERFACE, exitCode = 1)
-
-    credentials = getCredentials (credentialsPath = args.credentialsfile, interface = INTERFACE)
+    if not is_interface_connected (INTERFACE):
+        handle_error (message = 'VPN interface: \'%s\' is not connected, please connect it first\nBe sure the INTERFACE variable is correctly set if your VPN is actually connected' %INTERFACE, exit_code = 1)
     
-    response = forwardPort (credentials = credentials, endpointURL = ENDPOINT, timeout = TIMEOUT)
+    client_id = generate_client_id (RANDOM_BYTES_LENGTH)
+    
+    response = call_port_api (client_id, ENDPOINT, TIMEOUT)
 
-    nonDebugPrint ('Response recieved')
+    nondebug_print ('Response recieved')
 
     #Standard response
     if 'port' in response:
@@ -325,18 +276,18 @@ def main ():
 
     #Error response
     elif 'error' in response:
-        handleError (message = 'API returned an error: %s' %response ['error'], exitCode = 8)
+        handle_error (message = 'API returned an error: %s' %response ['error'], exit_code = 4)
         
     #Unknown key
     else:
-        keyValues = []
+        key_values = []
         
         for key, value in response.items ():
-            keyValues.append ('%s: %s' %(str (key), str (value)))
+            key_values.append ('%s: %s' %(str (key), str (value)))
             
-        message = concatStringToList ('API returned unknown key/value pair(s):\n\n', keyValues)
+        message = append_list_to_string ('API returned unknown key/value pair(s):\n\n', key_values)
 
-        handleError (message = message, exitCode = 9)
+        handle_error (message = message, exit_code = 5)
 
     print ('Make sure to allow this port in your firewall and configure your applications to use it.')
     print ('Have a nice day :)')
