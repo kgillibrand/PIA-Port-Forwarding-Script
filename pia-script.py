@@ -182,8 +182,6 @@ def generate_client_id (random_bytes_length) -> str:
     hash_generator.update (random_byte_string)
     hash_string = hash_generator.hexdigest ()
     
-    hash_string = hash_string.replace ('-', ' ')
-    
     debug_print ("Generated client ID: %s" %hash_string)
     
     return hash_string
