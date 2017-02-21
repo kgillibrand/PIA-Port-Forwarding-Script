@@ -44,13 +44,15 @@ Now finished but not perfect, personal project, etc.
 #Constants (that you may want to change)
 Global
 - DEBUG: Flag that enables debugging print statements, set by the -debug/--debug option so you shouldn't need to edit it. Default: False
-- DEFAULT_ENCODING: The backup encoding to decode the response with if the API doesn't return a content type header. Default: utf-8
 
 Main Method
 - RANDOM_BYTES_LENGTH: The number of bytes to read from os.urandom when generating the client id. The example script uses 100 lines of /dev/urandom instead which seemed excessive to me. Default: 3000
 - ENDPOINT: The API endpoint URL. Default: http://209.222.18.222:2000/
 - INTERFACE: The network interface that the VPN uses. Default: tun0
 - TIMEOUT: The timeout in seconds when calling the API. Default: 10
+
+call_port_api()
+- DEFAULT_ENCODING: The backup encoding to decode the response with if the API doesn't return a content type header. Default: utf-8
 
 #License
 MIT License

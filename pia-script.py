@@ -64,9 +64,6 @@ import os
 #Global Constants
 DEBUG = False
 '''Flag for debugging print statements (set by -debug/--debug command line option)'''
-
-DEFAULT_ENCODING = 'utf-8'
-'''Default encoding to use for decoding the API response if the server does not give us an encoding header'''
     
 #Code
 def debug_print (message: str, print_newline: bool = True):
@@ -194,7 +191,10 @@ def call_port_api (client_id: str, endpoint_url: str, timeout: int) -> dict:
         endpoint_url (str): The endpoint URL to post to
         timeout (int): The number of seconds before the API connection times out
     '''
-        
+    
+    DEFAULT_ENCODING = 'utf-8'
+    '''Default encoding to use for decoding the API response if the server does not give us an encoding header'''
+
     debug_print ('Posting to endpoint: \'%s\'' % endpoint_url)
 
     client_id_dict = {'client_id': client_id}
@@ -214,8 +214,7 @@ def call_port_api (client_id: str, endpoint_url: str, timeout: int) -> dict:
         handle_error (message = 'Error with get request to API endpoint with URL: %s' %get_url, exception = urlError, exit_code = 2)
         
     responseString = response.decode (responseEncoding)
-
-    nonHTTPResponse = urllib.parse.unquote (responseString) #Remove URL encoding, doesn't matter for the responses from this API in my experience
+    nonHTTPResponse = urllib.parse.unquote (responseString)
 
     debug_print ('Decoded API response bytes as: \'%s\'' %responseEncoding)
     debug_print ('API response JSON: \'%s\'' %nonHTTPResponse)
